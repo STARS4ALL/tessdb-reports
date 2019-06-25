@@ -1,0 +1,46 @@
+Prioridad Alta
+==============
+*) INDICE MULTICOLUMNA
+
+Probarlo en el código
+
+*) Tratamiento circumpolar
+ - coger las excepciones ephem.NeverUpError y ephem.AlwayUpError y transformarlas en valores
+   de sunrise = sunset = "Never Up"  y surise = sunset = "Never Down"
+ - tocar la funcion isDaytime() para ver primero estos 2 valores antes de continuar adelante.
+ - definir las constantes NEVER_UP y NEVER_DOWN en utils.py
+ - probar con una localización ficticia a 70 grados norte
+
+Prioridad media
+===============
+
+- eliminar la carga de ficheros JSON por inutil
+
+Prioridad baja
+==============
+
+*) Batch load utility ?
+
+*) Tess muticanal
+
+La estrategia para soportar e TESS multicanal implicara muy pocos cambios en el modelo de datos:
+- Cada fila de la tabla tess_t indicará un canal
+- en cada canal hay que poner los siguientes datos adicionales, específicos suyos:
+ +) los nombres de los angulos de inclinacion de los sensores respecto a la caja del instrumento (¿cuantos ángulos, qué nombres?) REALMENTE NO ES NECESARIO TENIENDO EL CHANNEL NUMBER
+- cada medida de tess_readings indicaró la medida de un canal
+- Hay que introducir la dimension adicional de orientación para tener datos de la orientación delos distintos sensores hacia el cielo. Por defecto, en los TESS monocanales, se asume el Zenit.
+  +) Número de angulos: 3. ¿Nombres como en aviacion?
+    Yaw   = Azimut
+    Pitch = Altura
+    Roll  = Inclinacion lateral Este-Oeste
+
+*) Estudiar si merece la pena poner nuevas constraints UNIQUE NOT NULL a tess_t.name y tess_t.mac_address
+*) Embeber servidor web de twisted.
+
+NOTE
+====
+
+He averiguado que los descartes son por el 'retained' flag
+
+ADDENDUM
+========
