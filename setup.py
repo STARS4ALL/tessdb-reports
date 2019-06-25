@@ -45,7 +45,7 @@ DESCRIPTION  = 'Command line tool and SQL scripts to generate reports from tessd
 LICENSE      = 'MIT'
 KEYWORDS     = 'Astronomy Python RaspberryPi'
 URL          = 'http://github.com/stars4all/tessdb-reports/'
-PACKAGES     = ["tess"]
+PACKAGES     = ["tess","tess_ida"]
 DEPENDENCIES = [
                   'pyephem >= 3.7.6',
                   'tabulate', 

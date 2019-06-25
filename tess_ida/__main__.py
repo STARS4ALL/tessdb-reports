@@ -1,8 +1,9 @@
-#!/bin/bash
 # ----------------------------------------------------------------------
-# Copyright (c) 2019 Rafael Gonzalez.
+# Copyright (c) 2014 Rafael Gonzalez.
 #
 # See the LICENSE file for details
 # ----------------------------------------------------------------------
 
-python -m tess_ida "$@"
+
+from .tess_ida import main
+main()
