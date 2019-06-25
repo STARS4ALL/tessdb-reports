@@ -77,19 +77,11 @@ DATA_FILES  = [
                               'files/usr/local/bin/tess_ida_bulk_dump.sh',
                               'files/usr/local/bin/tess_ida_bulk_dump_all.sh',
                               'files/usr/local/bin/tess_sunrise_sunset.sh', 
-                              'files/usr/local/bin/tessdb_index.sh',
                               ]),
 ]
 
 if os.name == "posix":
   
-  import shlex
-
-  # Some fixes before setup
-  if not os.path.exists("/etc/logrotate_astro.d"):
-    print("creating directory /etc/logrotate_astro.d")
-    args = shlex.split( "mkdir /etc/logrotate_astro.d")
-    subprocess.call(args)
 
   setup(name             = PKG_NAME,
         version          = versioneer.get_version(),
@@ -106,40 +98,6 @@ if os.name == "posix":
         install_requires = DEPENDENCIES,
         data_files       = DATA_FILES
         )
-  # Some fixes after setup
-  args = shlex.split( "chmod 644 /etc/logrotate_astro.d/tessdb")
-  subprocess.call(args)
-  args = shlex.split( "systemctl daemon-reload")
-  subprocess.call(args)
-
-elif os.name == "nt":
-
-  import sys
-  import shlex
-
-  setup(name             = PKG_NAME,
-        version          = versioneer.get_version(),
-        cmdclass         = versioneer.get_cmdclass(),
-        author           = AUTHOR,
-        author_email     = AUTHOR_EMAIL,
-        description      = DESCRIPTION,
-        long_description = long_description,
-        license          = LICENSE,
-        keywords         = KEYWORDS,
-        url              = URL,
-        classifiers      = CLASSIFIERS,
-        packages         = PACKAGES,
-        install_requires = DEPENDENCIES,
-        data_files       = [ 
-          (r'C:\tessdb',          [r'files\usr\local\bin\tessdb.bat',r'files\usr\local\bin\tess',r'files\usr\local\bin\winreload.py']),
-          (r'C:\tessdb\dbase',    [r'files\var\dbase\placeholder.txt']),
-          (r'C:\tessdb\log',      [r'files\var\log\placeholder.txt']),
-          (r'C:\tessdb\config',   [r'files/etc\tessdb\config.example.ini',r'files\etc\tessdb\tess_units.example.json', r'files\etc\tessdb\tess_location.example.json', r'files\etc\tessdb\locations.example.json']),
-          ]
-        )
-
-  args = shlex.split( "python -m tessdb --startup auto install")
-  subprocess.call(args)
-
+ 
 else:
   pass
