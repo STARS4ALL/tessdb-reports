@@ -26,6 +26,8 @@ import subprocess
 # other imports
 # -------------
 
+from . import __version__
+
 import tabulate
 from tessdb.sqlite3.utils import CURRENT, UNKNOWN, NEVER_UP, ALWAYS_UP
 
@@ -66,7 +68,7 @@ def utf8(s):
 
 def createParser():
     # create the top-level parser
-    parser = argparse.ArgumentParser(prog=sys.argv[0])
+    parser = argparse.ArgumentParser(prog=sys.argv[0], description="tessdb command line utility " + __version__)
 
     subparser = parser.add_subparsers(dest='command')
 

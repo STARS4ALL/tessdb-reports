@@ -24,6 +24,8 @@ import time
 # other imports
 # -------------
 
+from . import __version__
+
 import jinja2
 import pytz
 from tessdb.sqlite3.utils import UNKNOWN
@@ -47,7 +49,7 @@ TSTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S.000"
 
 def createParser():
     # create the top-level parser
-    parser = argparse.ArgumentParser(prog=sys.argv[0])
+    parser = argparse.ArgumentParser(prog=sys.argv[0], description="TESS IDA file generator " + __version__)
     parser.add_argument('name', metavar='<name>', help='TESS instrument name')
     parser.add_argument('-d', '--dbase', default=DEFAULT_DBASE, help='SQLite database full file path')
     parser.add_argument('-t', '--template', default=DEFAULT_TMPLT, help='Jinja2 template file path')
