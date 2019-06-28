@@ -325,8 +325,10 @@ def write_IDA_header_file(result, instrument_name, out_dir, timestamp, suffix):
     '''Writes the IDA header file after contained in result'''
     file_name = instrument_name + timestamp.strftime("_%Y-%m") + suffix + ".dat"
     full_name = os.path.join(out_dir, instrument_name, file_name)
+    if sys.version_info[0] > 2:
+        result = result.decode('utf-8')
     with open(full_name, 'w') as outfile:
-        outfile.write(result.decode('utf-8'))
+        outfile.write(result)
 
 def write_IDA_body_file(result, instrument_name, out_dir, timestamp, suffix):
     file_name = instrument_name + timestamp.strftime("_%Y-%m") + suffix + ".dat"
