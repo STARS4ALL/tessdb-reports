@@ -326,7 +326,7 @@ def write_IDA_header_file(result, instrument_name, out_dir, timestamp, suffix):
     file_name = instrument_name + timestamp.strftime("_%Y-%m") + suffix + ".dat"
     full_name = os.path.join(out_dir, instrument_name, file_name)
     with open(full_name, 'w') as outfile:
-        outfile.write(result)
+        outfile.write(result.decode('utf-8'))
 
 def write_IDA_body_file(result, instrument_name, out_dir, timestamp, suffix):
     file_name = instrument_name + timestamp.strftime("_%Y-%m") + suffix + ".dat"
