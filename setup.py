@@ -60,6 +60,7 @@ CLASSIFIERS  = [
     'License :: OSI Approved :: MIT License',
     'Operating System :: POSIX :: Linux',
     'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3.6',
     'Programming Language :: SQL',
     'Topic :: Scientific/Engineering :: Astronomy',
     'Topic :: Scientific/Engineering :: Atmospheric Science',
@@ -69,8 +70,10 @@ CLASSIFIERS  = [
 DATA_FILES  = [ 
   ('/etc/tessdb',            ['files/etc/tessdb/IDA-template.j2']),
   ('/usr/local/bin',         [
-                              'files/usr/local/bin/tess', 
+                              'files/usr/local/bin/tess',
+                              'files/usr/local/bin/tess3' ,
                               'files/usr/local/bin/tess_ida',
+                              'files/usr/local/bin/tess_ida3',
                               'files/usr/local/bin/tess_bulk_dump.sh', 
                               'files/usr/local/bin/tess_daily_summary.sh', 
                               'files/usr/local/bin/tess_life_span.sh', 

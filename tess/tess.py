@@ -22,6 +22,12 @@ import datetime
 import shlex
 import subprocess
 
+# Fix Python2 issue
+try: 
+    input = raw_input
+except NameError: 
+    pass
+
 #--------------
 # other imports
 # -------------
@@ -272,12 +278,12 @@ def paging(cursor, headers, size=10):
     ONE_PAGE = 10
     while True:
         result = cursor.fetchmany(ONE_PAGE)
-        print tabulate.tabulate(result, headers=headers, tablefmt='grid')
+        print(tabulate.tabulate(result, headers=headers, tablefmt='grid'))
         if len(result) < ONE_PAGE:
             break
         size -= ONE_PAGE
         if size > 0:
-            raw_input("Press Enter to continue [Ctrl-C to abort] ...")
+            input("Press Enter to continue [Ctrl-C to abort] ...")
         else:
             break
 
@@ -575,7 +581,7 @@ def instrument_delete(connection, options):
         WHERE i.name == :name
         ''', row)
     paging(cursor,["TESS","Acumulated Readings"])
-    raw_input("Are you sure ???? Press Enter to continue [Ctrl-C to abort] ...")
+    input("Are you sure ???? Press Enter to continue [Ctrl-C to abort] ...")
 
     cursor.execute("DELETE FROM tess_t WHERE name == :name", row)
     connection.commit()
