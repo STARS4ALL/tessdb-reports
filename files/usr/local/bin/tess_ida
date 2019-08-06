@@ -5,4 +5,4 @@
 # See the LICENSE file for details
 # ----------------------------------------------------------------------
 
-python -m tess_ida "$@"
+python3 -m tess_ida "$@"
