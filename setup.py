@@ -7,36 +7,6 @@ import versioneer
 # Default description in markdown
 long_description = open('README.md').read()
  
-# Converts from markdown to rst using pandoc
-# and its python binding.
-# Documetation is uploaded in PyPi when registering
-# by issuing `python setup.py register`
-
-try:
-    import subprocess
-    import pandoc
- 
-    process = subprocess.Popen(
-        ['which pandoc'],
-        shell=True,
-        stdout=subprocess.PIPE,
-        universal_newlines=True
-    )
- 
-    pandoc_path = process.communicate()[0]
-    pandoc_path = pandoc_path.strip('\n')
- 
-    pandoc.core.PANDOC_PATH = pandoc_path
- 
-    doc = pandoc.Document()
-    doc.markdown = long_description
- 
-    long_description = doc.rst
- 
-except:
-    pass
-   
-
 
 PKG_NAME     = 'tessdb-reports'
 AUTHOR       = 'Rafael Gonzalez'
@@ -60,6 +30,7 @@ CLASSIFIERS  = [
     'License :: OSI Approved :: MIT License',
     'Operating System :: POSIX :: Linux',
     'Programming Language :: Python :: 2.7',
+    'Programming Language :: Python :: 3.6',
     'Programming Language :: SQL',
     'Topic :: Scientific/Engineering :: Astronomy',
     'Topic :: Scientific/Engineering :: Atmospheric Science',
@@ -89,6 +60,7 @@ if os.name == "posix":
         author           = AUTHOR,
         author_email     = AUTHOR_EMAIL,
         description      = DESCRIPTION,
+        long_description_content_type = "text/markdown",
         long_description = long_description,
         license          = LICENSE,
         keywords         = KEYWORDS,
@@ -100,4 +72,5 @@ if os.name == "posix":
         )
  
 else:
-  pass
+
+   print("Not supported OS")
