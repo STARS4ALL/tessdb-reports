@@ -28,7 +28,6 @@ from . import __version__
 
 import jinja2
 import pytz
-from tessdb.sqlite3.utils import UNKNOWN
 
 # ----------------
 # Module constants
