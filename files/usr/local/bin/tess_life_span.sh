@@ -10,13 +10,13 @@ report_by_tess() {
 dbase=$1
 sqlite3 -csv -header ${dbase} <<EOF 
 .separator ;
-SELECT i.name AS tess, min(d.sql_date) AS start, max(d.sql_date) AS end, count(*) AS readings
-FROM tess_readings_t AS r
-JOIN tess_t AS i USING (tess_id)
-JOIN date_t AS d USING (date_id)
-WHERE i.name LIKE 'stars%'
-GROUP BY i.name
-ORDER BY i.name ASC;
+SELECT m.name as tess, i.mac_address as mac, min(d.sql_date) as start, max(d.sql_date) AS end, count(*) AS readings
+FROM name_to_mac_t AS m, tess_readings_t AS r
+JOIN tess_t     AS i USING (tess_id)
+JOIN date_t     AS d USING (date_id)
+WHERE m.mac_address = i.mac_address 
+GROUP BY m.name
+ORDER BY m.name ASC;
 EOF
 }
 

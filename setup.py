@@ -48,7 +48,8 @@ DATA_FILES  = [
                               'files/usr/local/bin/tess_live_unassigned.sh', 
                               'files/usr/local/bin/tess_ida_bulk_dump.sh',
                               'files/usr/local/bin/tess_ida_bulk_dump_all.sh',
-                              'files/usr/local/bin/tess_sunrise_sunset.sh', 
+                              'files/usr/local/bin/tess_sunrise_sunset.sh',
+                              'files/usr/local/bin/orphaned_names.sh', 
                               ]),
 ]
 

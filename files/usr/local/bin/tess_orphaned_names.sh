@@ -1,24 +1,28 @@
 #!/bin/bash
-# Summary report by instrument
+# Orphaned names when renaming
 
 # ------------------------------------------------------------------------------
 #                             AUXILIARY FUNCTIONS
 # ------------------------------------------------------------------------------
 
-report_by_tess() {
+orphaned_names() {
 dbase=$1
-sqlite3 ${dbase} <<EOF 
-.mode column
-.headers on
-SELECT d.sql_date, m.name, count(*) AS readings
-FROM name_to_mac_t AS m, tess_readings_t AS r
-JOIN tess_t AS i USING (tess_id)
-JOIN date_t AS d USING (date_id)
-WHERE i.mac_address = m.mac_address
-GROUP BY r.date_id, r.tess_id
-ORDER BY d.sql_date DESC, CAST(substr(m.name, 6) as decimal) ASC;
+sqlite3 -csv -header ${dbase} <<EOF
+.separator ;
+SELECT name as label, max(valid_until) as expiration_date
+FROM name_to_mac_t
+WHERE name IN
+    (SELECT name
+    FROM name_to_mac_t
+    EXCEPT
+    SELECT name as label
+    FROM name_to_mac_t
+    WHERE valid_state = "Current")
+GROUP BY NAME
+ORDER BY name ASC;
 EOF
 }
+
 
 # ------------------------------------------------------------------------------
 
@@ -64,7 +68,7 @@ else
 	echo "Using backup database, no need to pause tessdb service."
 fi
 
-report_by_tess ${dbase} > ${out_dir}/${name}.txt
+orphaned_names ${dbase} > ${out_dir}/${name}.csv
 
 # Resume background database I/O
 if  [[ operational_dbase="yes" ]]; then

@@ -9,11 +9,10 @@ query_sunrise_data() {
 dbase=$1
 sqlite3 ${dbase} <<EOF
 .mode line
-SELECT i.name, l.site, l.sunrise, l.sunset
-FROM tess_t     AS i
-JOIN location_t AS l USING (location_id)
-WHERE i.valid_state = 'Current'
-ORDER BY i.name ASC;
+SELECT name, site, sunrise, sunset
+FROM tess_v   
+WHERE valid_state = 'Current'
+ORDER BY name ASC;
 EOF
 }
 # ------------------------------------------------------------------------------

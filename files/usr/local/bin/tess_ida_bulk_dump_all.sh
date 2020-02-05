@@ -10,7 +10,7 @@ query_names() {
 dbase=$1
 sqlite3 ${dbase} <<EOF
 SELECT name 
-FROM tess_t 
+FROM tess_v 
 WHERE name like 'stars%' 
 AND valid_state = 'Current' 
 ORDER by name ASC;

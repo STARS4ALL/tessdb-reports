@@ -10,15 +10,15 @@ report_live_unassigned() {
 dbase=$1
 sqlite3 -csv -header ${dbase} <<EOF 
 .separator ;
-SELECT i.name AS tess, l.site as site, min(d.sql_date) as earliest_date, max(d.sql_date) AS latest_date, count(*) AS readings
-FROM tess_readings_t AS r
+SELECT m.name as tess, i.mac_address as mac,l.site as site, min(d.sql_date) as earliest_date, max(d.sql_date) AS latest_date, count(*) AS readings
+FROM name_to_mac_t AS m, tess_readings_t AS r
 JOIN tess_t     AS i USING (tess_id)
 JOIN date_t     AS d USING (date_id)
 JOIN location_t AS l USING (location_id)
-WHERE i.name LIKE 'stars%'
+WHERE m.mac_address = i.mac_address 
 AND r.location_id < 0
-GROUP BY i.name
-ORDER BY i.name ASC;
+GROUP BY m.name
+ORDER BY m.name ASC;
 EOF
 }
 
