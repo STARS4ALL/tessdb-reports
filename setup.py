@@ -49,7 +49,7 @@ DATA_FILES  = [
                               'files/usr/local/bin/tess_ida_bulk_dump.sh',
                               'files/usr/local/bin/tess_ida_bulk_dump_all.sh',
                               'files/usr/local/bin/tess_sunrise_sunset.sh',
-                              'files/usr/local/bin/names_history.sh', 
+                              'files/usr/local/bin/tess_names_history.sh', 
                               ]),
 ]
 
