@@ -37,8 +37,12 @@ CLASSIFIERS  = [
     'Development Status :: 4 - Beta',
 ]
 
+# Additional data inside the package
+PACKAGE_DATA = {
+    'tess_ida': ['templates/IDA-template.j2'],
+}
+                                
 DATA_FILES  = [ 
-  ('/etc/tessdb',            ['files/etc/tessdb/IDA-template.j2']),
   ('/usr/local/bin',         [
                               'files/usr/local/bin/tessdb_index.sh',
                               'files/usr/local/bin/tess_ida',
@@ -70,7 +74,8 @@ if os.name == "posix":
         classifiers      = CLASSIFIERS,
         packages         = PACKAGES,
         install_requires = DEPENDENCIES,
-        data_files       = DATA_FILES
+        data_files       = DATA_FILES,
+        package_data     = PACKAGE_DATA
         )
  
 else:
