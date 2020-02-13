@@ -10,7 +10,7 @@ dbase=$1
 sqlite3 ${dbase} <<EOF 
 .mode column
 .headers on
-SELECT d.sql_date, m.name, count(*) AS readings
+SELECT d.sql_date, m.name, i.mac_address, count(*) AS readings
 FROM name_to_mac_t AS m, tess_readings_t AS r
 JOIN tess_t AS i USING (tess_id)
 JOIN date_t AS d USING (date_id)

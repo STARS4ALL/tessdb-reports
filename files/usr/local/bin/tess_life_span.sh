@@ -16,7 +16,7 @@ JOIN tess_t     AS i USING (tess_id)
 JOIN date_t     AS d USING (date_id)
 WHERE m.mac_address = i.mac_address 
 GROUP BY m.name
-ORDER BY m.name ASC;
+ORDER BY CAST(substr(m.name, 6) as decimal) ASC;
 EOF
 }
 
