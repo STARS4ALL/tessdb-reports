@@ -69,7 +69,7 @@ else
 fi
 
 photometers=$(query_names ${dbase})
-years="2015 2016 2017 2018 2019"
+years="2015 2016 2017 2018 2019 2020"
 months="01 02 03 04 05 06 07 08 09 10 11 12"
 # Loops over the instruments file and dumping data
 for instrument in $photometers; do
