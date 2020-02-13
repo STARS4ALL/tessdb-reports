@@ -108,7 +108,7 @@ def get_metadata(connection, options, location_id):
             '''
             SELECT name, channel, model, firmware, mac_address,
                     zero_point, cover_offset, filter, fov, azimuth, altitude
-            FROM tess_t
+            FROM tess_v
             WHERE valid_state == "Current"
             AND   name == :name
             ''', row)
