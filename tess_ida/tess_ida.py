@@ -23,6 +23,9 @@ import time
 # Access IDA template withing the package
 from pkg_resources import resource_filename
 
+from dateutil.relativedelta import relativedelta
+
+
 #--------------
 # other imports
 # -------------
@@ -88,6 +91,15 @@ def month_generator(start_month):
             while next_month.month == month.month:
                 next_month += one_day
             month = next_month
+
+def month_generator(start_month):
+    '''start_month is a datetime object represeting the start of month'''
+    end_month = datetime.datetime.utcnow().replace(day=1, hour=0, minute=0, second=0,microsecond=0)
+    month     = start_month
+    while month <= end_month:
+        yield month
+        month = month + relativedelta(months = +1)
+            
 
 
 def result_generator(cursor, arraysize=500):
@@ -166,7 +178,7 @@ def write_IDA_body_file(cursor, timezone, instrument_name, out_dir, timestamp, s
 # MAIN FUNCTION
 # -------------
 
-def do_one_pass(connection, resultset, options):
+def do_one_pass(connection, resultset, options, mac):
     empty = len(resultset) == 0
     if not empty:
             # Render one IDA file per diferent location in case the TESS nstrument
@@ -192,6 +204,7 @@ def do_one_pass(connection, resultset, options):
             context = {}
             context['instrument'], context['location'], context['observer'] = metadata.get_metadata(connection, options, location_id)
             timezone = context['location']['timezone']
+            context['instrument']['mac_address'] = mac_address # Patch period
             template_path = resource_filename(__name__, 'templates/IDA-template.j2')
             header = render(template_path, context).encode('utf-8')
             suffix = '' if idx == 0 else '_x' + str(idx)
@@ -208,20 +221,28 @@ def main():
     try:
         options = createParser().parse_args(sys.argv[1:])
         connection = open_database(options.dbase)
+        mac_intervals = readings.mac_intervals(connection, options)
         if options.latest_month:
-            resultset = readings.analyze_latest(connection, options)
-            do_one_pass(connection, resultset, options)
+            month  = datetime.datetime.utcnow().replace(day=1,hour=0,minute=0,second=0,microsecond=0)
+            mac = readings.mac_for(mac_intervals, month)
+            resultset = readings.analyze_latest(connection, options, mac)
+            do_one_pass(connection, resultset, options, mac)
         elif options.previous_month:
-            resultset = readings.analyze_previous(connection, options)
-            do_one_pass(connection, resultset, options)
+            month  = datetime.datetime.utcnow().replace(day=1,hour=0,minute=0,second=0,microsecond=0) - datetime.timedelta(days=30)
+            mac = readings.mac_for(mac_intervals, month)
+            resultset = readings.analyze_previous(connection, options, mac)
+            do_one_pass(connection, resultset, options, mac)
         elif options.for_month:
-            resultset = readings.analyze_for_month(connection, options)
-            do_one_pass(connection, resultset, options)
+            month = options.for_month
+            mac = readings.mac_for(mac_intervals, month)
+            resultset = readings.analyze_for_month(connection, options, mac)
+            do_one_pass(connection, resultset, options, mac)
         else:
             for month in month_generator(options.from_month):
                 options.for_month = month   # This is a hack
-                resultset = readings.analyze_for_month(connection, options)
-                do_one_pass(connection, resultset, options)
+                mac = readings.mac_for(mac_intervals, month)
+                resultset = readings.analyze_for_month(connection, options, mac)
+                do_one_pass(connection, resultset, options, mac)
     except KeyboardInterrupt:
         print('Interrupted by user ^C')
     #except Exception as e:
