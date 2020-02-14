@@ -94,4 +94,4 @@ def get_metadata(connection, options, location_id):
     ins = instrument(connection, options)
     loc = location(connection, options, location_id)
     obs = observer(connection, options)
-    return inst, loc, obs
+    return ins, loc, obs

@@ -29,6 +29,9 @@ from pkg_resources import resource_filename
 
 from . import __version__
 
+import tess_ida.readings as readings
+import tess_ida.metadata as metadata
+
 import jinja2
 import pytz
 
@@ -51,11 +54,12 @@ TSTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S.000"
 
 def createParser():
     # create the top-level parser
-    parser = argparse.ArgumentParser(prog=sys.argv[0], description="TESS IDA file generator " + __version__)
+    name = os.path.split(os.path.dirname(sys.argv[0]))[-1]
+    parser = argparse.ArgumentParser(prog=name, description="TESS IDA file generator " + __version__)
     parser.add_argument('name', metavar='<name>', help='TESS instrument name')
     parser.add_argument('-d', '--dbase', default=DEFAULT_DBASE, help='SQLite database full file path')
     parser.add_argument('-o', '--out_dir', default=DEFAULT_DIR, help='Output directory to dump record')
-    group = parser.add_mutually_exclusive_group()
+    group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-m', '--for-month', type=mkmonth, metavar='<YYYY-MM>', help='Given year & month. Defaults to current.')
     group.add_argument('-f', '--from-month', type=mkmonth, metavar='<YYYY-MM>', help='Starting year & month')
     group.add_argument('-l', '--latest-month', action='store_true', help='Latest month only.')
@@ -144,7 +148,7 @@ def write_IDA_header_file(header, instrument_name, out_dir, timestamp, suffix):
     file_name = instrument_name + timestamp.strftime("_%Y-%m") + suffix + ".dat"
     full_name = os.path.join(out_dir, instrument_name, file_name)
     if sys.version_info[0] > 2:
-        result = result.decode('utf-8')
+        header = header.decode('utf-8')
     with open(full_name, 'w') as outfile:
         outfile.write(header)
 
@@ -207,7 +211,7 @@ def main():
         if options.latest_month:
             resultset = readings.analyze_latest(connection, options)
             do_one_pass(connection, resultset, options)
-        if options.previous_month:
+        elif options.previous_month:
             resultset = readings.analyze_previous(connection, options)
             do_one_pass(connection, resultset, options)
         elif options.for_month:
