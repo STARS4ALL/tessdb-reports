@@ -20,6 +20,9 @@ import sqlite3
 import datetime
 import time
 
+# Access IDA template withing the package
+from pkg_resources import resource_filename
+
 #--------------
 # other imports
 # -------------
@@ -51,7 +54,6 @@ def createParser():
     parser = argparse.ArgumentParser(prog=sys.argv[0], description="TESS IDA file generator " + __version__)
     parser.add_argument('name', metavar='<name>', help='TESS instrument name')
     parser.add_argument('-d', '--dbase', default=DEFAULT_DBASE, help='SQLite database full file path')
-    parser.add_argument('-t', '--template', default=DEFAULT_TMPLT, help='Jinja2 template file path')
     parser.add_argument('-o', '--out_dir', default=DEFAULT_DIR, help='Output directory to dump record')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-m', '--for-month', type=mkmonth, metavar='<YYYY-MM>', help='Given year & month. Defaults to current.')
@@ -186,7 +188,8 @@ def do_one_pass(connection, resultset, options):
             context = {}
             context['instrument'], context['location'], context['observer'] = metadata.get_metadata(connection, options, location_id)
             timezone = context['location']['timezone']
-            header = render(options.template, context).encode('utf-8')
+            template_path = resource_filename(__name__, 'templates/IDA-template.j2')
+            header = render(template_path, context).encode('utf-8')
             suffix = '' if idx == 0 else '_x' + str(idx)
             write_IDA_header_file(header, options.name, options.out_dir, timestamp, suffix)
             write_IDA_body_file(cursor, timezone, options.name, options.out_dir, timestamp, suffix)

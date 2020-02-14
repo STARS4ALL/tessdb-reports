@@ -37,8 +37,6 @@ out_dir="${2:-$DEFAULT_REPORTS_DIR}"
 # Month: either "latest", "previous" or "YYYY-MM"
 month="${3:-$DEFAULT_MONTH}"
 
-# Jinja2 template to render IDA format file
-template="${4:-/etc/tessdb/IDA-template.j2}"
 
 if  [[ ! -f $dbase || ! -r $dbase ]]; then
         echo "Database file $dbase does not exists or is not readable."
@@ -46,11 +44,6 @@ if  [[ ! -f $dbase || ! -r $dbase ]]; then
         exit 1
 fi
 
-if  [[ ! -f $template || ! -r $template ]]; then
-        echo "IDA Template file $template does not exists or is not readable."
-        echo "Exiting"
-        exit 1
-fi
 
 dbname=$(basename $dbase)
 oper_dbname=$(basename $DEFAULT_DATABASE)
@@ -77,14 +70,14 @@ for instrument in $photometers; do
     if [[ "$month" = "latest" ]];
     then
         echo "Generating latest month IDA file for TESS $instrument under ${out_dir}/${instrument}"
-        /usr/local/bin/tess_ida ${instrument} -l -d ${dbase} -t ${template} -o ${out_dir}
+        /usr/local/bin/tess_ida ${instrument} -l -d ${dbase}  -o ${out_dir}
     elif [[ "$month" = "previous" ]];
     then
         echo "Generating previous month IDA file for TESS $instrument under ${out_dir}/${instrument}"
-        /usr/local/bin/tess_ida ${instrument} -p -d ${dbase} -t ${template} -o ${out_dir}
+        /usr/local/bin/tess_ida ${instrument} -p -d ${dbase}  -o ${out_dir}
     else
         echo "Generating IDA file for TESS $instrument for month $month under ${out_dir}/${instrument}"
-        /usr/local/bin/tess_ida ${instrument} -m $month -d ${dbase} -t ${template} -o ${out_dir}
+        /usr/local/bin/tess_ida ${instrument} -m $month -d ${dbase}  -o ${out_dir}
     fi
 done
 

@@ -26,6 +26,9 @@ import time
 # Module constants
 # ----------------
 
+# Hack while there is no observer SQL table
+observer_data = {}
+
 def instrument(connection, options):
     cursor = connection.cursor()
     row = {'name': options.name}
@@ -55,6 +58,7 @@ def instrument(connection, options):
 
 
 def location(connection, options, location_id):
+    global observer_data
     cursor = connection.cursor()
     row = {'location_id': location_id}
     cursor.execute(
@@ -65,9 +69,12 @@ def location(connection, options, location_id):
             WHERE location_id == :location_id
             ''', row)
     result = cursor.fetchone()
+
+    # Hack while there is no observer SQL table
+    observer_data['name']         = result[0]
+    observer_data['organization'] = result[1]
+
     return {
-        'contact_name'   : result[0],
-        'organization'   : result[1],
         'site'           : result[2],
         'longitude'      : result[3],
         'latitude'       : result[4],
@@ -76,11 +83,15 @@ def location(connection, options, location_id):
         'province'       : result[7],
         'country'        : result[8],
         'timezone'       : result[9],
-        
     }
+
+def observer(connection, options):
+    global observer_data     # Hack while there is no observer SQL table
+    return observer_data
+
 
 def get_metadata(connection, options, location_id):
     ins = instrument(connection, options)
     loc = location(connection, options, location_id)
-    obs = None
+    obs = observer(connection, options)
     return inst, loc, obs

@@ -23,6 +23,9 @@ EOF
 DEFAULT_DATABASE="/var/dbase/tess.db"
 DEFAULT_REPORTS_DIR="/var/dbase/reports/IDA"
 
+years="2015 2016 2017 2018 2019 2020"
+months="01 02 03 04 05 06 07 08 09 10 11 12"
+
 # get the name from the script name without extensions
 name=$(basename ${0%.sh})
 
@@ -34,8 +37,6 @@ dbase="$(ls -1 $dbase)"
 # Output directory is created if not exists inside the inner script
 out_dir="${2:-$DEFAULT_REPORTS_DIR}"
 
-# Jinja2 template to render IDA format file
-template="${3:-/etc/tessdb/IDA-template.j2}"
 
 if  [[ ! -f $dbase || ! -r $dbase ]]; then
         echo "Database file $dbase does not exists or is not readable."
@@ -69,15 +70,13 @@ else
 fi
 
 photometers=$(query_names ${dbase})
-years="2015 2016 2017 2018 2019 2020"
-months="01 02 03 04 05 06 07 08 09 10 11 12"
 # Loops over the instruments file and dumping data
 for instrument in $photometers; do
     # Loop over years
     for year in $years; do
         for month in $months; do
             echo "Generating IDA file for TESS $instrument for month $year-$month under ${out_dir}/${instrument}"
-            /usr/local/bin/tess_ida ${instrument} -m "${year}-${month}" -d ${dbase} -t ${template} -o ${out_dir}
+            /usr/local/bin/tess_ida ${instrument} -m "${year}-${month}" -d ${dbase} -o ${out_dir}
         done
     done 
 done
