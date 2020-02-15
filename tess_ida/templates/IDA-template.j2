@@ -16,16 +16,16 @@
 # Measurement direction per channel: {{ instrument.azimuth[0] }}, {{ 90.0 - instrument.altitude[0] }}
 # Field of view: {{ instrument.fov }}
 # Number of fields per line: 7
-# TESS MAC address: {{ instrument.mac_address }} (Current)
+# TESS MAC address: {{ instrument.mac_address[0] }} (Current)
 # TESS firmware version: {{ instrument.firmware }}
 # TESS cover offset value: {{ instrument.cover_offset }}
 # TESS zero point (latest):  {{ instrument.zero_point[0] }}
 # Comment: {% if instrument.zero_point[0] == 20.50 %}This photometer has not been calibrated{% endif %}
-# Comment: {% if len(instrument.zero_point) > 1 %}ZP changes: {{instrument.zero_point | join(',')}} {% endif %} 
-# Comment: {% if len(instrument.mac_address) > 1 %}MAC changes: {{instrument.mac_address|join(',')}} {% endif %}
-# Comment: {% if len(instrument.filter) > 1 %}Filter changes: {{instrument.filter} | join(',')} {% endif %}
-# Comment: {% if len(instrument.azimuth) > 1 %}Azimuth changes: {{instrument.azimuth | join(',')}} {% endif %}
-# Comment: {% if len(instrument.altitude) > 1 %}Altitude changes: {{instrument.altitude | join(',')}} {% endif %}
+# Comment: {% if instrument.zero_point is sequence %}ZP changes: {{instrument.zero_point | join(',')}} {% endif %} 
+# Comment: {% if instrument.mac_address is sequence %}MAC changes: {{instrument.mac_address|join(',')}} {% endif %}
+# Comment: {% if instrument.filter is sequence %}Filter changes: {{instrument.filter | join(',')}} {% endif %}
+# Comment: {% if instrument.azimuth is sequence %}Azimuth changes: {{instrument.azimuth | join(',')}} {% endif %}
+# Comment: {% if instrument.altitude is sequence %}Altitude changes: {{instrument.altitude | join(',')}} {% endif %}
 # Comment: MSAS = ZP - 2.5*log10(Frequency)
 # blank line 30
 # blank line 31
