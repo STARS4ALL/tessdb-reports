@@ -44,11 +44,11 @@ observer_data = {}
 def single_instrument(name, tess):
     return {
         'name':         name,
-        'mac_address':  [tess[0]],
-        'zero_point':   [tess[1]],
-        'filter':       [tess[2]],
-        'azimuth':      [tess[3]],
-        'altitude':     [tess[4]],
+        'mac_address':  tess[0],
+        'zero_point':   tess[1],
+        'filter':       tess[2],
+        'azimuth':      tess[3],
+        'altitude':     tess[4],
         'model':        tess[5],
         'firmware':     tess[6],
         'fov':          tess[7],
@@ -57,9 +57,7 @@ def single_instrument(name, tess):
     }
 
 def multiple_instruments(name, tess_list):
-    def changed(iterable):
-        return not all(x == iterable[0] for x in iterable)
-
+    
     # Convert to unque set values
     mac_set    = {item[0] for item in tess_list}
     zp_set     = {item[1] for item in tess_list}
@@ -72,33 +70,18 @@ def multiple_instruments(name, tess_list):
     cov_set    = {item[8] for item in tess_list}
     chan_set   = {item[9] for item in tess_list}
 
-    if changed(model_set):
-        looging.warn("Unexpected change of instrument model attribute")
-
-    if changed(firm_set):
-        looging.warn("Unexpected change of instrument firmware attribute")
-
-    if changed(fov_set):
-        looging.warn("Unexpected change of instrument fov attribute")
-
-    if changed(cov_set):
-        looging.warn("Unexpected change of instrument cover_offset attribute")
-
-    if changed(chan_set):
-        looging.warn("Unexpected change of instrument channel attribute")
-
     return {
         'name':         name,
         'mac_address':  list(mac_set),
         'zero_point':   list(zp_set),
         'filter':       list(filter_set),
         'azimuth':      list(az_set),
-        'altitude':     list(ralt_set),
-        'model':        model_set[0],
-        'firmware':     firm_set[0],
-        'fov':          fov_set[0],
-        'cover_offset': cov_set[0],
-        'channel':      chan_set[9],
+        'altitude':     list(alt_set),
+        'model':        model_set.pop(),
+        'firmware':     firm_set.pop(),
+        'fov':          fov_set.pop(),
+        'cover_offset': cov_set.pop(),
+        'channel':      chan_set.pop(),
     }
 
 
