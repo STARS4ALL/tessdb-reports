@@ -17,47 +17,130 @@ import sys
 import sqlite3
 import datetime
 import time
+import logging
 
 #--------------
 # other imports
 # -------------
 
+#--------------
+# local imports
+# -------------
+
+from . import __version__, MONTH_FORMAT, TSTAMP_FORMAT, UNKNOWN
+
 # ----------------
 # Module constants
 # ----------------
 
+
 # Hack while there is no observer SQL table
 observer_data = {}
 
-def instrument(connection, options):
-    cursor = connection.cursor()
-    row = {'name': options.name}
-    cursor.execute(
-            '''
-            SELECT name, channel, model, firmware, mac_address,
-                    zero_point, cover_offset, filter, fov, azimuth, altitude
-            FROM tess_v
-            WHERE valid_state == "Current"
-            AND   name == :name
-            ''', row)
-    # Solo para instrumentos TESS monocanal
-    result = cursor.fetchone()
+# ------------------
+# AUXILIAR FUNCTIONS
+# ------------------
+
+def single_instrument(name, tess):
     return {
-        'name':         result[0],
-        'channel':      result[1],
-        'model':        result[2],
-        'firmware':     result[3],
-        'mac_address':  result[4],
-        'zero_point':   result[5],
-        'cover_offset': result[6],
-        'filter':       result[7],
-        'fov':          result[8],
-        'azimuth':      result[9],
-        'altitude':     result[10],
+        'name':         name,
+        'mac_address':  list(result[0]),
+        'zero_point':   list(result[1]),
+        'filter':       list(result[2]),
+        'azimuth':      list(result[3]),
+        'altitude':     list(result[4]),
+        'model':        result[5],
+        'firmware':     result[6],
+        'fov':          result[7],
+        'cover_offset': result[8],
+        'channel':      result[9],
+    }
+
+def multiple_instruments(name, tess_list):
+    def changed(iterable):
+        return not all(x == iterable[0] for x in iterable)
+
+    # Convert to unque set values
+    mac_set    = {item[0] for item in tess_list}
+    zp_set     = {item[1] for item in tess_list}
+    filter_set = {item[2] for item in tess_list}
+    az_set     = {item[3] for item in tess_list}
+    alt_set    = {item[4] for item in tess_list}
+    model_set  = {item[5] for item in tess_list}
+    firm_set   = {item[6] for item in tess_list}
+    fov_set    = {item[7] for item in tess_list}
+    cov_set    = {item[8] for item in tess_list}
+    chan_set   = {item[9] for item in tess_list}
+
+    if changed(model_set):
+        looging.warn("Unexpected change of instrument model attribute")
+
+    if changed(firm_set):
+        looging.warn("Unexpected change of instrument firmware attribute")
+
+    if changed(fov_set):
+        looging.warn("Unexpected change of instrument fov attribute")
+
+    if changed(cov_set):
+        looging.warn("Unexpected change of instrument cover_offset attribute")
+
+    if changed(chan_set):
+        looging.warn("Unexpected change of instrument channel attribute")
+
+    return {
+        'name':         name,
+        'mac_address':  list(mac_set),
+        'zero_point':   list(zp_set),
+        'filter':       list(filter_set),
+        'azimuth':      list(az_set),
+        'altitude':     list(ralt_set),
+        'model':        model_set[0],
+        'firmware':     firm_set[0],
+        'fov':          fov_set[0],
+        'cover_offset': cov_set[0],
+        'channel':      chan_set[9],
     }
 
 
-def location(connection, options, location_id):
+def available(name, month, location_id, connection):
+    '''Return a list of tess_id for the given month and a given location_id'''
+    row = {'name': name, 'location_id': location_id, 'from_date': month.strftime(TSTAMP_FORMAT)}
+    cursor = connection.cursor()
+    cursor.execute(
+        '''
+        SELECT DISTINCT i.mac_address, i.zero_point, i.filter, i.azimuth, i.altitude, 
+                        i.model, i.firmware, i.fov, i.cover_offset, i.channel, i.tess_id
+        FROM tess_readings_t AS r
+        JOIN date_t          AS d USING (date_id)
+        JOIN time_t          AS t USING (time_id)
+        JOIN tess_t          AS i USING (tess_id)
+        WHERE i.mac_address IN (SELECT mac_address FROM name_to_mac_t WHERE name == :name)
+        AND   r.location_id == :location_id
+        AND     datetime(d.sql_date || 'T' || t.time || '.000') 
+        BETWEEN datetime(:from_date) 
+        AND     datetime(:from_date, '+1 month')
+        ORDER BY i.tess_id ASC
+        ''', row)
+    return cursor.fetchall()
+
+# --------------
+# MAIN FUNCTIONS
+# --------------
+
+def instrument(name, month, location_id, connection):
+    context = {}
+    tess_list = available(name, month, location_id, connection)
+    l = len(tess_list)
+    if l == 0:
+        logging.error("{0}: THIS SHOULD NOT HAPPEN No data for location id {1} in month {2}".format(name, location_id, month.strfmt(MONTH_FORMAT)))
+    elif l == 1:
+        logging.info("{0}: Only 1 tess_id for this location id {1} and month {2}".format(name,location_id), month.strfmt(MONTH_FORMAT))
+        return single_instrument(name, tess_list[0])
+    else:
+        logging.info("{0}:Several tess_id for this location id {1} and month {2}".format(name, location_id), month.strfmt(MONTH_FORMAT))
+        return multiple_instruments(name, tess_list)
+
+def location(location_id, connection):
     global observer_data
     cursor = connection.cursor()
     row = {'location_id': location_id}
@@ -85,13 +168,7 @@ def location(connection, options, location_id):
         'timezone'       : result[9],
     }
 
-def observer(connection, options):
+def observer(month, connection):
     global observer_data     # Hack while there is no observer SQL table
     return observer_data
 
-
-def get_metadata(connection, options, location_id):
-    ins = instrument(connection, options)
-    loc = location(connection, options, location_id)
-    obs = observer(connection, options)
-    return ins, loc, obs

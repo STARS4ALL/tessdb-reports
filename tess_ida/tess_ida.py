@@ -19,37 +19,55 @@ import argparse
 import sqlite3
 import datetime
 import time
-
+import logging
 # Access IDA template withing the package
 from pkg_resources import resource_filename
 
 from dateutil.relativedelta import relativedelta
 
-
 #--------------
 # other imports
 # -------------
 
-from . import __version__
-
-import tess_ida.readings as readings
-import tess_ida.metadata as metadata
-
 import jinja2
 import pytz
+
+#--------------
+# local imports
+# -------------
+
+from . import __version__, MONTH_FORMAT, TSTAMP_FORMAT, UNKNOWN
+import tess_ida.readings as readings
+import tess_ida.metadata as metadata
 
 # ----------------
 # Module constants
 # ----------------
 
-UNKNOWN = "Unknown"
-
 DEFAULT_DBASE = "/var/dbase/tess.db"
-DEFAULT_TMPLT = "/etc/tessdb/IDA-template.j2"
 DEFAULT_DIR   = "/var/dbase/reports/IDA"
-DEFAULT_MONTH = datetime.datetime.utcnow().strftime("%Y-%m")
 
-TSTAMP_FORMAT = "%Y-%m-%dT%H:%M:%S.000"
+# ---------------------
+# Module global classes
+# ---------------------
+
+class MonthIterator:
+
+    def __init__(self, start_month, end_month):
+        self.__month = start_month
+        self.__end = end_month + relativedelta(months = +1)
+
+    def __iter__(self):
+        '''Make this this class an iterable'''
+        return self
+
+    def __next__(self):
+        '''Make this this class an iterator'''
+        if self.__month == self.__end:
+            raise StopIteration
+        self.__month += relativedelta(months = +1)
+        return self.__month
+
 
 # -----------------------
 # Module global functions
@@ -60,13 +78,16 @@ def createParser():
     name = os.path.split(os.path.dirname(sys.argv[0]))[-1]
     parser = argparse.ArgumentParser(prog=name, description="TESS IDA file generator " + __version__)
     parser.add_argument('name', metavar='<name>', help='TESS instrument name')
-    parser.add_argument('-d', '--dbase', default=DEFAULT_DBASE, help='SQLite database full file path')
+    parser.add_argument('-d', '--dbase',   default=DEFAULT_DBASE, help='SQLite database full file path')
     parser.add_argument('-o', '--out_dir', default=DEFAULT_DIR, help='Output directory to dump record')
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-m', '--for-month', type=mkmonth, metavar='<YYYY-MM>', help='Given year & month. Defaults to current.')
-    group.add_argument('-f', '--from-month', type=mkmonth, metavar='<YYYY-MM>', help='Starting year & month')
-    group.add_argument('-l', '--latest-month', action='store_true', help='Latest month only.')
-    group.add_argument('-p', '--previous-month', action='store_true', help='previous month only.')
+    group1 = parser.add_mutually_exclusive_group(required=True)
+    group1.add_argument('-m', '--for-month',  type=mkmonth, metavar='<YYYY-MM>', help='Given year & month. Defaults to current.')
+    group1.add_argument('-f', '--from-month', type=mkmonth, metavar='<YYYY-MM>', help='Starting year & month')
+    group1.add_argument('-l', '--latest-month', action='store_true', help='Latest month only.')
+    group1.add_argument('-p', '--previous-month', action='store_true', help='previous month only.')
+    group2 = parser.add_mutually_exclusive_group(required=True)
+    group2.add_argument('-v', '--verbose', action='store_true', help='Verbose output.')
+    group2.add_argument('-q', '--quiet',   action='store_true', help='Quiet output.')
     return parser
 
 # -------------------
@@ -74,33 +95,11 @@ def createParser():
 # -------------------
 
 
+def now_month():
+    return datetime.datetime.utcnow().replace(day=1,hour=0,minute=0,second=0,microsecond=0)
+
 def mkmonth(datestr):
-    return datetime.datetime.strptime(datestr, '%Y-%m')
-
-
-def month_generator(start_month):
-    '''start_month is a datetime object represeting the start of month'''
-    end_month = datetime.datetime.utcnow().replace(day=1, hour=0, minute=0, second=0,microsecond=0)
-    one_month = datetime.timedelta(days=28)
-    one_day   = datetime.timedelta(days=1)
-    month     = start_month
-    if start_month <= end_month:
-        while month <= end_month:
-            yield month
-            next_month = month + one_month
-            while next_month.month == month.month:
-                next_month += one_day
-            month = next_month
-
-def month_generator(start_month):
-    '''start_month is a datetime object represeting the start of month'''
-    end_month = datetime.datetime.utcnow().replace(day=1, hour=0, minute=0, second=0,microsecond=0)
-    month     = start_month
-    while month <= end_month:
-        yield month
-        month = month + relativedelta(months = +1)
-            
-
+    return datetime.datetime.strptime(datestr, MONTH_FORMAT)
 
 def result_generator(cursor, arraysize=500):
     'An iterator that uses fetchmany to keep memory usage down'
@@ -111,11 +110,34 @@ def result_generator(cursor, arraysize=500):
         for result in results:
             yield result
 
+def createMonthList(options):
+    if options.latest_month:
+        start_month  = now_month()
+        end_month   = start_month
+    elif options.previous_month:
+        start_month  = now_month() + relativedelta(months = -1)
+        end_month    = start_month
+    elif options.for_month:
+        start_month = options.for_month
+        end_month   = start_month
+    else:
+        start_month  = options.for_month
+        end_month    = now_month()
+     return MonthIterator(start_month, end_month)
+
+def configureLogging(options):
+    if options.verbose:
+        level = looging.DEBUG
+    elif options.quiet:
+        level = logging.WARN
+    else:
+        level = logging.INFO
+    logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', level=level)
 
 def open_database(dbase_path):
     if not os.path.exists(dbase_path):
        raise IOError("No SQLite3 Database file found at {0}. Exiting ...".format(dbase_path))
-    print("Opening database {0}".format(dbase_path))
+    logging.info("Opening database {0}".format(dbase_path))
     return sqlite3.connect(dbase_path)
 
 
@@ -132,8 +154,6 @@ def render_readings_line(dbreading, timezone):
             'zp':   dbreading[5],
         }
     return "%(utc)s;%(local)s;%(tamb)s;%(tsky)s;%(freq)s;%(mag)s;%(zp)s" % record
-
-
 
 def render(template_path, context):
     if not os.path.exists(template_path):
@@ -155,20 +175,16 @@ def create_directories(instrument_name, out_dir, year=None):
 # IDA FILE Generation
 # -------------------
 
-def write_IDA_header_file(header, instrument_name, out_dir, timestamp, suffix):
+def write_IDA_header_file(header, file_path):
     '''Writes the IDA header file after contained in result'''
-    file_name = instrument_name + timestamp.strftime("_%Y-%m") + suffix + ".dat"
-    full_name = os.path.join(out_dir, instrument_name, file_name)
     if sys.version_info[0] > 2:
         header = header.decode('utf-8')
-    with open(full_name, 'w') as outfile:
+    with open(file_path, 'w') as outfile:
         outfile.write(header)
 
 
-def write_IDA_body_file(cursor, timezone, instrument_name, out_dir, timestamp, suffix):
-    file_name = instrument_name + timestamp.strftime("_%Y-%m") + suffix + ".dat"
-    full_name = os.path.join(out_dir, instrument_name, file_name)
-    with open(full_name, 'a') as outfile:
+ def write_IDA_body_file(name, month, cursor, timezone, file_path):
+    with open(file_path, 'a') as outfile:
         for reading in result_generator(cursor):
             body_line = render_readings_line(reading, timezone)
             outfile.write(body_line)
@@ -178,73 +194,52 @@ def write_IDA_body_file(cursor, timezone, instrument_name, out_dir, timestamp, s
 # MAIN FUNCTION
 # -------------
 
-def do_one_pass(connection, resultset, options, mac):
-    empty = len(resultset) == 0
-    if not empty:
-            # Render one IDA file per diferent location in case the TESS nstrument
-            # has changed location during the given month
-        for idx, result in enumerate(resultset):
-            count = result[0]
-            location_id = result[1]
-            start_date_id = result[2]
-            print("Generating monthly IDA file for {0} with {1} samples starting from {2} for location id {3}".format(options.name, count, start_date_id, location_id))
-            create_directories(options.name, options.out_dir)
-            if options.latest_month:
-                timestamp  = datetime.datetime.utcnow()
-                cursor = readings.fetch_latest(connection, options, location_id)
-            elif options.previous_month:
-                # back to last day of previous month
-                timestamp = datetime.datetime.utcnow().replace(day=1,hour=0,minute=0,second=0,microsecond=0)
-                timestamp -= datetime.timedelta(days=1)
-                cursor = readings.fetch_previous(connection, options, location_id)
-            else:
-                timestamp  = options.for_month
-                cursor = readings.fetch_for_month(connection, options, location_id)
-            # render IDA header file from Jinja2 template
-            context = {}
-            context['instrument'], context['location'], context['observer'] = metadata.get_metadata(connection, options, location_id)
-            timezone = context['location']['timezone']
-            context['instrument']['mac_address'] = mac_address # Patch period
-            template_path = resource_filename(__name__, 'templates/IDA-template.j2')
-            header = render(template_path, context).encode('utf-8')
-            suffix = '' if idx == 0 else '_x' + str(idx)
-            write_IDA_header_file(header, options.name, options.out_dir, timestamp, suffix)
-            write_IDA_body_file(cursor, timezone, options.name, options.out_dir, timestamp, suffix)
-    else:
-        print("No data: skipping subdirs creation and IDA file generation")
   
+
+def write_IDA_file(name, month, location_id, connection, options):
+    
+    # Render one IDA file per location 
+    # in case the TESS nstrument has changed location during the given month
+    context = {}
+    template_path = resource_filename(__name__, 'templates/IDA-template.j2')
+    create_directories(name, options.out_dir)
+    cursor = readings.fetch(name, month, location_id, connection)
+    context['location']   = metadata.location(location_id, connection)
+    context['instrument'] = metadata.instrument(name, month, location_id, connection)
+    context['observer']   = metadata.observer(month, connection)
+    timezone = context['location']['timezone']
+    header = render(template_path, context).encode('utf-8')
+    suffix = '-' + str(location_id)
+    file_name = name + "_" + month.strftime(MONTH_FORMAT) + suffix + ".dat"
+    file_path = os.path.join(options.out_dir, name, file_name)
+    write_IDA_header_file(header, file_path)
+    write_IDA_body_file(name, month, cursor, timezone, file_path)
+
+
 
 def main():
     '''
-    Utility entry point
+    Main entry point
     '''
     try:
         options = createParser().parse_args(sys.argv[1:])
+        configureLogging(options)
         connection = open_database(options.dbase)
-        mac_intervals = readings.mac_intervals(connection, options)
-        if options.latest_month:
-            month  = datetime.datetime.utcnow().replace(day=1,hour=0,minute=0,second=0,microsecond=0)
-            mac = readings.mac_for(mac_intervals, month)
-            resultset = readings.analyze_latest(connection, options, mac)
-            do_one_pass(connection, resultset, options, mac)
-        elif options.previous_month:
-            month  = datetime.datetime.utcnow().replace(day=1,hour=0,minute=0,second=0,microsecond=0) - datetime.timedelta(days=30)
-            mac = readings.mac_for(mac_intervals, month)
-            resultset = readings.analyze_previous(connection, options, mac)
-            do_one_pass(connection, resultset, options, mac)
-        elif options.for_month:
-            month = options.for_month
-            mac = readings.mac_for(mac_intervals, month)
-            resultset = readings.analyze_for_month(connection, options, mac)
-            do_one_pass(connection, resultset, options, mac)
-        else:
-            for month in month_generator(options.from_month):
-                options.for_month = month   # This is a hack
-                mac = readings.mac_for(mac_intervals, month)
-                resultset = readings.analyze_for_month(connection, options, mac)
-                do_one_pass(connection, resultset, options, mac)
+        name = options.name        
+        month_list = createMonthList(options)
+        for month in month_list:
+            per_location_list = readings.available(name, month, connection)
+            if len(per_location_list):
+                for location in per_location_list:
+                    count       = location[0]
+                    location_id = location[1]
+                    site        = location[2]
+                    date        = month.strftime(MONTH_FORMAT)
+                    logging.info("{0}: Generating {2} monthly IDA file with {1} samples for location '{3}'".format(name, count, date, site))
+                    write_IDA_file(name, month, location_id, connection, options)
+            else:
+                logging.info("{0}: No data for month {1}: skipping subdirs creation and IDA file generation".format(name,date))
     except KeyboardInterrupt:
-        print('Interrupted by user ^C')
-    #except Exception as e:
-        print("Error => {0}".format(e))
-
+        logging.exception('Interrupted by user ^C')
+    except Exception as e:
+        logging.exception("Error => {0}".format(e))
