@@ -54,13 +54,13 @@ def mac_for(interval_list, month):
     for interval in interval_list:
         if interval['start'] <= month <= interval['end']:
             return interval['mac']
-     return None
+    return None
 
 def change_of_mac(interval_list, month):
     for interval in interval_list:
         if month <= interval['end'] <= month + relativedelta(months = +1):
             return list.index(interval)
-     return None
+    return None
 
 def do_it_all(connection, options, month):
     result = []
@@ -244,7 +244,7 @@ def fetch(name, month, location_id, connection):
         JOIN date_t     as d USING (date_id)
         JOIN time_t     as t USING (time_id)
         JOIN tess_t     as i USING (tess_id)
-        WHERE i.mac_address == IN (SELECT mac_address FROM name_to_mac_t WHERE name == :name)
+        WHERE i.mac_address IN (SELECT mac_address FROM name_to_mac_t WHERE name == :name)
         AND r.location_id == :location_id
         AND datetime(timestamp) BETWEEN datetime(:from_date) 
                                 AND     datetime(:from_date, '+1 month')

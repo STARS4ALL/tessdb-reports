@@ -37,8 +37,9 @@ import pytz
 # -------------
 
 from . import __version__, MONTH_FORMAT, TSTAMP_FORMAT, UNKNOWN
-import tess_ida.readings as readings
-import tess_ida.metadata as metadata
+
+from .metadata import location, instrument, observer
+from .readings import available, fetch
 
 # ----------------
 # Module constants
@@ -68,6 +69,10 @@ class MonthIterator:
         self.__month += relativedelta(months = +1)
         return self.__month
 
+    def next(self):
+        '''Puython 2.7 compatibility'''
+        return self.__next__()
+
 
 # -----------------------
 # Module global functions
@@ -85,7 +90,7 @@ def createParser():
     group1.add_argument('-f', '--from-month', type=mkmonth, metavar='<YYYY-MM>', help='Starting year & month')
     group1.add_argument('-l', '--latest-month', action='store_true', help='Latest month only.')
     group1.add_argument('-p', '--previous-month', action='store_true', help='previous month only.')
-    group2 = parser.add_mutually_exclusive_group(required=True)
+    group2 = parser.add_mutually_exclusive_group()
     group2.add_argument('-v', '--verbose', action='store_true', help='Verbose output.')
     group2.add_argument('-q', '--quiet',   action='store_true', help='Quiet output.')
     return parser
@@ -123,7 +128,7 @@ def createMonthList(options):
     else:
         start_month  = options.for_month
         end_month    = now_month()
-     return MonthIterator(start_month, end_month)
+    return MonthIterator(start_month, end_month)
 
 def configureLogging(options):
     if options.verbose:
@@ -182,8 +187,7 @@ def write_IDA_header_file(header, file_path):
     with open(file_path, 'w') as outfile:
         outfile.write(header)
 
-
- def write_IDA_body_file(name, month, cursor, timezone, file_path):
+def write_IDA_body_file(name, month, cursor, timezone, file_path):
     with open(file_path, 'a') as outfile:
         for reading in result_generator(cursor):
             body_line = render_readings_line(reading, timezone)
@@ -194,8 +198,6 @@ def write_IDA_header_file(header, file_path):
 # MAIN FUNCTION
 # -------------
 
-  
-
 def write_IDA_file(name, month, location_id, connection, options):
     
     # Render one IDA file per location 
@@ -203,10 +205,10 @@ def write_IDA_file(name, month, location_id, connection, options):
     context = {}
     template_path = resource_filename(__name__, 'templates/IDA-template.j2')
     create_directories(name, options.out_dir)
-    cursor = readings.fetch(name, month, location_id, connection)
-    context['location']   = metadata.location(location_id, connection)
-    context['instrument'] = metadata.instrument(name, month, location_id, connection)
-    context['observer']   = metadata.observer(month, connection)
+    cursor = fetch(name, month, location_id, connection)
+    context['location']   = location(location_id, connection)
+    context['instrument'] = instrument(name, month, location_id, connection)
+    context['observer']   = observer(month, connection)
     timezone = context['location']['timezone']
     header = render(template_path, context).encode('utf-8')
     suffix = '-' + str(location_id)
@@ -214,7 +216,6 @@ def write_IDA_file(name, month, location_id, connection, options):
     file_path = os.path.join(options.out_dir, name, file_name)
     write_IDA_header_file(header, file_path)
     write_IDA_body_file(name, month, cursor, timezone, file_path)
-
 
 
 def main():
@@ -228,7 +229,7 @@ def main():
         name = options.name        
         month_list = createMonthList(options)
         for month in month_list:
-            per_location_list = readings.available(name, month, connection)
+            per_location_list = available(name, month, connection)
             if len(per_location_list):
                 for location in per_location_list:
                     count       = location[0]

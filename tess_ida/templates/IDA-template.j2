@@ -21,11 +21,11 @@
 # TESS cover offset value: {{ instrument.cover_offset }}
 # TESS zero point (latest):  {{ instrument.zero_point[0] }}
 # Comment: {% if instrument.zero_point[0] == 20.50 %}This photometer has not been calibrated{% endif %}
-# Comment: {% if len(instrument.zero_point) > 1 %}ZP changes: {{ ','.join(instrument.zero_point) }} {% endif %} 
-# Comment: {% if len(instrument.mac_address) > 1 %}MAC changes: {{ ','.join(instrument.mac_address) }} {% endif %}
-# Comment: {% if len(instrument.filter) > 1 %}Filter changes: {{ ','.join(instrument.filter) }} {% endif %}
-# Comment: {% if len(instrument.azimuth) > 1 %}Azimuth changes: {{ ','.join(instrument.azimuth) }} {% endif %}
-# Comment: {% if len(instrument.altitude) > 1 %}Altitude changes: {{ ','.join(instrument.altitude) }} {% endif %}
+# Comment: {% if len(instrument.zero_point) > 1 %}ZP changes: {{instrument.zero_point | join(',')}} {% endif %} 
+# Comment: {% if len(instrument.mac_address) > 1 %}MAC changes: {{instrument.mac_address|join(',')}} {% endif %}
+# Comment: {% if len(instrument.filter) > 1 %}Filter changes: {{instrument.filter} | join(',')} {% endif %}
+# Comment: {% if len(instrument.azimuth) > 1 %}Azimuth changes: {{instrument.azimuth | join(',')}} {% endif %}
+# Comment: {% if len(instrument.altitude) > 1 %}Altitude changes: {{instrument.altitude | join(',')}} {% endif %}
 # Comment: MSAS = ZP - 2.5*log10(Frequency)
 # blank line 30
 # blank line 31

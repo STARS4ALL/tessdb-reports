@@ -44,16 +44,16 @@ observer_data = {}
 def single_instrument(name, tess):
     return {
         'name':         name,
-        'mac_address':  list(result[0]),
-        'zero_point':   list(result[1]),
-        'filter':       list(result[2]),
-        'azimuth':      list(result[3]),
-        'altitude':     list(result[4]),
-        'model':        result[5],
-        'firmware':     result[6],
-        'fov':          result[7],
-        'cover_offset': result[8],
-        'channel':      result[9],
+        'mac_address':  [tess[0]],
+        'zero_point':   [tess[1]],
+        'filter':       [tess[2]],
+        'azimuth':      [tess[3]],
+        'altitude':     [tess[4]],
+        'model':        tess[5],
+        'firmware':     tess[6],
+        'fov':          tess[7],
+        'cover_offset': tess[8],
+        'channel':      tess[9],
     }
 
 def multiple_instruments(name, tess_list):
@@ -132,12 +132,12 @@ def instrument(name, month, location_id, connection):
     tess_list = available(name, month, location_id, connection)
     l = len(tess_list)
     if l == 0:
-        logging.error("{0}: THIS SHOULD NOT HAPPEN No data for location id {1} in month {2}".format(name, location_id, month.strfmt(MONTH_FORMAT)))
+        logging.error("{0}: THIS SHOULD NOT HAPPEN No data for location id {1} in month {2}".format(name, location_id, month.strftime(MONTH_FORMAT)))
     elif l == 1:
-        logging.info("{0}: Only 1 tess_id for this location id {1} and month {2}".format(name,location_id), month.strfmt(MONTH_FORMAT))
+        logging.info("{0}: Only 1 tess_id for this location id {1} and month {2}".format(name,location_id, month.strftime(MONTH_FORMAT)))
         return single_instrument(name, tess_list[0])
     else:
-        logging.info("{0}:Several tess_id for this location id {1} and month {2}".format(name, location_id), month.strfmt(MONTH_FORMAT))
+        logging.info("{0}:Several tess_id for this location id {1} and month {2}".format(name, location_id, month.strftime(MONTH_FORMAT)))
         return multiple_instruments(name, tess_list)
 
 def location(location_id, connection):
