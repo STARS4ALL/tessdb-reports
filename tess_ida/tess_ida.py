@@ -236,7 +236,7 @@ def main():
                     location_id = location[1]
                     site        = location[2]
                     date        = month.strftime(MONTH_FORMAT)
-                    logging.info("{0}: Generating {2} monthly IDA file with {1} samples for location '{3}'".format(name, count, date, site))
+                    logging.info("{0}: Generating {2} monthly IDA file with {1} samples for location '{3}'".format(name, count, date, site.encode('utf-8')))
                     write_IDA_file(name, month, location_id, connection, options)
             else:
                 logging.info("{0}: No data for month {1}: skipping subdirs creation and IDA file generation".format(name,date))

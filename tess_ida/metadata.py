@@ -120,7 +120,7 @@ def instrument(name, month, location_id, connection):
         logging.info("{0}: Only 1 tess_id for this location id {1} and month {2}".format(name,location_id, month.strftime(MONTH_FORMAT)))
         return single_instrument(name, tess_list[0])
     else:
-        logging.info("{0}:Several tess_id for this location id {1} and month {2}".format(name, location_id, month.strftime(MONTH_FORMAT)))
+        logging.info("{0}: Several tess_id for this location id {1} and month {2}".format(name, location_id, month.strftime(MONTH_FORMAT)))
         return multiple_instruments(name, tess_list)
 
 def location(location_id, connection):
