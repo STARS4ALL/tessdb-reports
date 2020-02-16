@@ -38,8 +38,7 @@ import pytz
 
 from . import __version__, MONTH_FORMAT, TSTAMP_FORMAT, UNKNOWN
 
-from .metadata import location, instrument, observer
-from .readings import available, fetch
+from . import readings, metadata
 
 # ----------------
 # Module constants
@@ -52,7 +51,7 @@ DEFAULT_DIR   = "/var/dbase/reports/IDA"
 # Module global classes
 # ---------------------
 
-class MonthIterator:
+class MonthIterator(object):
 
     def __init__(self, start_month, end_month):
         self.__month = start_month
@@ -132,7 +131,7 @@ def createMonthList(options):
 
 def configureLogging(options):
     if options.verbose:
-        level = looging.DEBUG
+        level = logging.DEBUG
     elif options.quiet:
         level = logging.WARN
     else:
@@ -198,22 +197,27 @@ def write_IDA_body_file(name, month, cursor, timezone, file_path):
 # MAIN FUNCTION
 # -------------
 
-def write_IDA_file(name, month, location_id, connection, options):
+def write_IDA_file(name, month, location_id, connection, options, single):
     
     # Render one IDA file per location 
     # in case the TESS nstrument has changed location during the given month
     context = {}
     template_path = resource_filename(__name__, 'templates/IDA-template.j2')
     create_directories(name, options.out_dir)
-    cursor = fetch(name, month, location_id, connection)
-    context['location']   = location(location_id, connection)
-    context['instrument'] = instrument(name, month, location_id, connection)
-    context['observer']   = observer(month, connection)
+    logging.debug("fetching readings from the database")
+    cursor = readings.fetch(name, month, location_id, connection)
+    logging.debug("fetching location metadata from the database")
+    context['location']   = metadata.location(location_id, connection)
+    logging.debug("fetching instrument metadata from the database")
+    context['instrument'] = metadata.instrument(name, month, location_id, connection)
+    logging.debug("fetching observer metadata from the database")
+    context['observer']   = metadata.observer(month, connection)
     timezone = context['location']['timezone']
     header = render(template_path, context).encode('utf-8')
-    suffix = '-' + str(location_id)
+    suffix = '-' + str(location_id) if not single else ''
     file_name = name + "_" + month.strftime(MONTH_FORMAT) + suffix + ".dat"
     file_path = os.path.join(options.out_dir, name, file_name)
+    logging.info("{0}: saving on to file {1}".format(name, file_name))
     write_IDA_header_file(header, file_path)
     write_IDA_body_file(name, month, cursor, timezone, file_path)
 
@@ -229,15 +233,18 @@ def main():
         name = options.name        
         month_list = createMonthList(options)
         for month in month_list:
-            per_location_list = available(name, month, connection)
-            if len(per_location_list):
+            logging.debug("Fetching available data for {0} on {1}".format(name,month.strftime(MONTH_FORMAT)))
+            per_location_list = readings.available(name, month, connection)
+            nlocations = len(per_location_list)
+            if nlocations > 0:
+                single = nlocations == 1
                 for location in per_location_list:
                     count       = location[0]
                     location_id = location[1]
                     site        = location[2]
                     date        = month.strftime(MONTH_FORMAT)
                     logging.info("{0}: Generating {2} monthly IDA file with {1} samples for location '{3}'".format(name, count, date, site.encode('utf-8')))
-                    write_IDA_file(name, month, location_id, connection, options)
+                    write_IDA_file(name, month, location_id, connection, options, single)
             else:
                 logging.info("{0}: No data for month {1}: skipping subdirs creation and IDA file generation".format(name,date))
     except KeyboardInterrupt:
