@@ -214,7 +214,7 @@ def write_IDA_file(name, month, location_id, connection, options, single):
     context['observer']   = metadata.observer(month, connection)
     timezone = context['location']['timezone']
     header = render(template_path, context).encode('utf-8')
-    suffix = '-' + str(location_id) if not single else ''
+    suffix = '_' + str(location_id) if not single else ''
     file_name = name + "_" + month.strftime(MONTH_FORMAT) + suffix + ".dat"
     file_path = os.path.join(options.out_dir, name, file_name)
     logging.info("{0}: saving on to file {1}".format(name, file_name))
