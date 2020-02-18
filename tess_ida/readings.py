@@ -16,6 +16,7 @@ import os.path
 import sys
 import sqlite3
 import datetime
+import logging
 
 # ----------------
 # Other librarires
@@ -102,6 +103,7 @@ def available(name, month, connection):
         AND     datetime(:from_date, '+1 month')
         GROUP BY r.location_id
         ''', row)
+    logging.debug("{0}: Fetched counted readings grouped by location id".format(name))
     return cursor.fetchall()
 
 

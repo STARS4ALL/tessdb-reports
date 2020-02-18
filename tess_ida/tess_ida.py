@@ -204,13 +204,13 @@ def write_IDA_file(name, month, location_id, connection, options, single):
     context = {}
     template_path = resource_filename(__name__, 'templates/IDA-template.j2')
     create_directories(name, options.out_dir)
-    logging.debug("fetching readings from the database")
+    logging.debug("{0}: Fetching readings from the database".format(name))
     cursor = readings.fetch(name, month, location_id, connection)
-    logging.debug("fetching location metadata from the database")
+    logging.debug("{0}: Fetching location metadata from the database".format(name))
     context['location']   = metadata.location(location_id, connection)
-    logging.debug("fetching instrument metadata from the database")
+    logging.debug("{0}: Fetching instrument metadata from the database".format(name))
     context['instrument'] = metadata.instrument(name, month, location_id, connection)
-    logging.debug("fetching observer metadata from the database")
+    logging.debug("{0}: Fetching observer metadata from the database".format(name))
     context['observer']   = metadata.observer(month, connection)
     timezone = context['location']['timezone']
     header = render(template_path, context).encode('utf-8')
@@ -233,7 +233,7 @@ def main():
         name = options.name        
         month_list = createMonthList(options)
         for month in month_list:
-            logging.debug("Fetching available data for {0} on {1}".format(name,month.strftime(MONTH_FORMAT)))
+            logging.debug("{0}: Fetching available data on {1}".format(name,month.strftime(MONTH_FORMAT)))
             per_location_list = readings.available(name, month, connection)
             nlocations = len(per_location_list)
             if nlocations > 0:
@@ -248,6 +248,6 @@ def main():
             else:
                 logging.info("{0}: No data for month {1}: skipping subdirs creation and IDA file generation".format(name,date))
     except KeyboardInterrupt:
-        logging.exception('Interrupted by user ^C')
+        logging.exception('{0}: Interrupted by user ^C'.format(name))
     except Exception as e:
         logging.exception("Error => {0}".format(e))

@@ -13,7 +13,6 @@
 # Moving / Fixed look direction: FIXED
 # Number of channels: 1
 {% if instrument.filter is sequence and instrument.filter is not string -%}
-Filter is sequence
 # Filters per channel: {{ instrument.filter[0] }}
 {% else -%}
 # Filters per channel: {{ instrument.filter }}
@@ -25,25 +24,33 @@ Filter is sequence
 {% endif -%}
 # Field of view: {{ instrument.fov }}
 # Number of fields per line: 7
-{% if instrument.mac_address is sequence and instrument.mac_address is not string -%}
-# TESS MAC address: {{ instrument.mac_address | join(', ') }}
+{% if instrument.mac_address.changed -%}
+# TESS MAC address: {{ instrument.mac_address.current.value }} (from {{ instrument.mac_address.current.valid_since }})
 {% else -%}
-# TESS MAC address: {{ instrument.mac_address }}
+# TESS MAC address: {{ instrument.mac_address.current.value }}
 {% endif -%}
 # TESS firmware version: {{ instrument.firmware }}
 # TESS cover offset value: {{ instrument.cover_offset }}
-{% if instrument.zero_point is sequence -%}
-# TESS zero point:  {{ instrument.zero_point  | join(', ') }}
+{% if instrument.zero_point.changed -%}
+# TESS zero point: {{ instrument.zero_point.current.value }} (from {{ instrument.zero_point.current.valid_since }})
 {% else -%}
-# TESS zero point:  {{ instrument.zero_point }}
+# TESS zero point: {{ instrument.zero_point.current.value }}
 {% endif -%}
-{% if instrument.zero_point is not sequence and instrument.zero_point == 20.50 -%}
-# Comment: This photometer has not been calibrated
+{% if instrument.zero_point.current.value == 20.50 -%}
+# Comment: This photometer may have not been calibrated
 {% else -%}
 # Comment:  
 {% endif -%}
-# Comment:  
-# Comment: 
+{% if instrument.mac_address.changed -%}
+# Comment: MAC address was {{ instrument.mac_address.previous.value }} (until {{ instrument.mac_address.current.valid_until }})
+{% else -%}
+# Comment:
+{% endif -%}
+{% if instrument.zero_point.changed -%}
+# Comment: Previous Zero Point was {{ instrument.zero_point.previous.value }} (until {{ instrument.zero_point.previous.valid_until }})
+{% else -%}
+# Comment:
+{% endif -%}
 # Comment: 
 # Comment: 
 # Comment: 
