@@ -64,13 +64,16 @@ def get_mac_valid_period(connection, name, mac):
 def single_instrument(name, tess):
     mac_address = {'changed': False, 'current': {'value': tess[1]}}
     zero_point  = {'changed': False, 'current': {'value': tess[2], 'valid_since': tess[11], 'valid_until':tess[12], 'valid_state': tess[13] }}
+    filters     = {'changed': False, 'current': {'value': tess[3], 'valid_since': tess[11], 'valid_until':tess[12], 'valid_state': tess[13] }}
+    azimuth     = {'changed': False, 'current': {'value': tess[4], 'valid_since': tess[11], 'valid_until':tess[12], 'valid_state': tess[13] }}
+    altitude    = {'changed': False, 'current': {'value': tess[5], 'valid_since': tess[11], 'valid_until':tess[12], 'valid_state': tess[13] }}
     return {
         'name':         name,
         'mac_address':  mac_address,
         'zero_point':   zero_point,
-        'filter':       tess[3],
-        'azimuth':      tess[4],
-        'altitude':     tess[5],
+        'filter':       filters,
+        'azimuth':      azimuth,
+        'altitude':     altitude,
         'model':        tess[6],
         'firmware':     tess[7],
         'fov':          tess[8],
@@ -78,28 +81,44 @@ def single_instrument(name, tess):
         'channel':      tess[10],
     }
 
+def if_changed(tess_list, index):
+    var1 = {
+        'value':        tess_list[0][index], 
+        'valid_since':  tess_list[0][11], 
+        'valid_until':  tess_list[0][12], 
+        'valid_state':  tess_list[0][13] 
+    }
+    var2 = {
+        'value':        tess_list[1][index], 
+        'valid_since':  tess_list[1][11], 
+        'valid_until':  tess_list[1][12], 
+        'valid_state':  tess_list[1][13] 
+    }
+    changed = (tess_list[0][index] != tess_list[1][index])
+    return var1, var2, changed
+
+def maybe_swap(var, var2):
+    if var2['valid_state'] == "Expired":
+        return var1, var2
+    else:
+        return var2, var1
+
 def multiple_instruments(name, tess_list, connection):
     
     mac_address = {'changed': False}
-    zero_point  = {'changed': True}
+    zero_point  = {}
+    filters     = {}
+    azimuth     = {}
+    altitude    = {}
     mac1 = tess_list[0][1]
     mac2 = tess_list[1][1]
 
     # Even in the case of the change of MAC, there is almost 100% that the
     # zero point will change
-    zero_point['changed'] = True
-    zp1 = {
-        'value':        tess_list[0][2], 
-        'valid_since':  tess_list[0][11], 
-        'valid_until':  tess_list[0][12], 
-        'valid_state':  tess_list[0][13] 
-    }
-    zp2 = {
-        'value':        tess_list[1][2], 
-        'valid_since':  tess_list[1][11], 
-        'valid_until':  tess_list[1][12], 
-        'valid_state':  tess_list[1][13] 
-    }
+    zp1, zp2, zero_point['changed']      = if_changed(tess_list, 2)
+    filter1, filter2, filters['changed'] = if_changed(tess_list, 3)
+    az1, az2, azimuth['changed']         = if_changed(tess_list, 4)
+    alt1, alt2, altitude['changed']      = if_changed(tess_list, 5)
 
     mac_record1 = get_mac_valid_period(connection, name, mac1)
     if mac1 != mac2 :
@@ -111,44 +130,43 @@ def multiple_instruments(name, tess_list, connection):
             mac_address['previous'] = mac_record2
             zero_point['current']  = zp1
             zero_point['previous'] = zp2
+            filters['current']  = filter1
+            filters['previous'] = filter2
+            azimuth['current']  = az1
+            azimuth['previous'] = az2
+            altitude['current']  = alt1
+            altitude['previous'] = alt2
         else:
             mac_address['current']  = mac_record2
             mac_address['previous'] = mac_record1
             zero_point['current']  = zp2
             zero_point['previous'] = zp1
+            filters['current']  = filter2
+            filters['previous'] = filter1
+            azimuth['current']  = az2
+            azimuth['previous'] = az1
+            altitude['current']  = alt2
+            altitude['previous'] = alt1
     else:
-        # No change of MAC means change of ZP.
+        # No change of MAC means change of ZP, filter, azimuth or altitude.
         mac_address['current'] = mac_record1
-        if zp2['valid_state'] == "Expired":
-            zero_point['current']  = zp1
-            zero_point['previous'] = zp2
-        else:
-            zero_point['current']  = zp1
-            zero_point['previous'] = zp2
-
-    # Convert to unque set values   
-   
-    filter_set = {(item[3],item[0]) for item in tess_list}
-    az_set     = {(item[4],item[0]) for item in tess_list}
-    alt_set    = {(item[5],item[0]) for item in tess_list}
-    model_set  = {item[6] for item in tess_list}
-    firm_set   = {item[7] for item in tess_list}
-    fov_set    = {item[8] for item in tess_list}
-    cov_set    = {item[9] for item in tess_list}
-    chan_set   = {item[10] for item in tess_list}
+        zero_point['current'], zero_point['previous'] = maybe_swap(zp1, zp2)
+        filters['current'],    filters['previous']    = maybe_swap(filter1, filter1)
+        azimuth['current'],    azimuth['previous']    = maybe_swap(az1, az2)
+        altitude['current'],   altitude['previous']   = maybe_swap(alt1, alt2)
 
     return {
         'name':         name,
         'mac_address':  mac_address,
         'zero_point':   zero_point,
-        'filter':       filter_set.pop()[0],
-        'azimuth':      az_set.pop()[0],
-        'altitude':     alt_set.pop()[0],
-        'model':        model_set.pop(),
-        'firmware':     firm_set.pop(),
-        'fov':          fov_set.pop(),
-        'cover_offset': cov_set.pop(),
-        'channel':      chan_set.pop(),
+        'filter':       filters,
+        'azimuth':      azimuth,
+        'altitude':     altitude,
+        'model':        tess_list[0][6],
+        'firmware':     tess_list[0][7],
+        'fov':          tess_list[0][8],
+        'cover_offset': tess_list[0][9],
+        'channel':      tess_list[0][10],
     }
 
 

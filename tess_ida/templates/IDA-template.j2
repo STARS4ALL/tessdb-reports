@@ -12,15 +12,15 @@
 # Moving / Stationary position: STATIONARY
 # Moving / Fixed look direction: FIXED
 # Number of channels: 1
-{% if instrument.filter is sequence and instrument.filter is not string -%}
-# Filters per channel: {{ instrument.filter[0] }}
+{% if instrument.filter.changed -%}
+# Filters per channel: {{ instrument.filter.current.value }} (from {{ instrument.filter.current.valid_since }})
 {% else -%}
-# Filters per channel: {{ instrument.filter }}
+# Filters per channel: {{ instrument.filter.current.value }}
 {% endif -%}
-{% if instrument.azimuth is sequence and instrument.azimuth is not string -%}
-# Measurement direction per channel: {{ instrument.azimuth[0] }}, {{ 90.0 - instrument.altitude[0] }}
+{% if instrument.azimuth.changed or instrument.azimuth.changed -%}
+# Measurement direction per channel: {{ instrument.azimuth.current.value }}, {{ 90.0 - instrument.altitude.current.value }} (from {{ instrument.azimuth.current.valid_since }})
 {% else -%}
-# Measurement direction per channel: {{ instrument.azimuth }}, {{ 90.0 - instrument.altitude }}
+# Measurement direction per channel: {{ instrument.azimuth.current.value }}, {{ 90.0 - instrument.altitude.current.value }}
 {% endif -%}
 # Field of view: {{ instrument.fov }}
 # Number of fields per line: 7
@@ -53,8 +53,16 @@
 {% else -%}
 # Comment:
 {% endif -%}
-# Comment: 
-# Comment: 
+{% if instrument.filter.changed -%}
+# Comment: Previous filter was {{ instrument.filter.previous.value }} (until {{ instrument.filter.previous.valid_until }})
+{% else -%}
+# Comment:
+{% endif -%}
+{% if instrument.azimuth.changed or instrument.azimuth.changed -%}
+# Comment: previous measurement direction per channel was {{ instrument.azimuth.previous.value }}, {{ 90.0 - instrument.altitude.previous.value }} (from {{ instrument.azimuth.previous.valid_since }})
+{% else -%}
+# Comment:
+{% endif -%}
 # Comment: 
 # Comment: MSAS = ZP - 2.5*log10(Frequency)
 # blank line 30
