@@ -126,7 +126,7 @@ def createMonthList(options):
         start_month = options.for_month
         end_month   = start_month
     else:
-        start_month  = options.for_month
+        start_month  = options.from_month
         end_month    = now_month()
     return MonthIterator(start_month, end_month)
 
