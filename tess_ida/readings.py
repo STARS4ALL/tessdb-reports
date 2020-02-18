@@ -35,54 +35,10 @@ from . import MONTH_FORMAT, TSTAMP_FORMAT, CURRENT, EXPIRED
 # ----------------
 
 
-
-
-def get_mac_intervals(connection, name):
-    cursor = connection.cursor()
-    row = {'name': name}
-    cursor.execute(
-        '''
-        SELECT mac_address,valid_since,valid_until,valid_state
-        FROM name_to_mac_t
-        WHERE name == :name
-        ORDER BY valid_state DESC;
-        ''', row)
-    return [ {'start':datetime.datetime.strptime(item[1], "%Y-%m-%dT%H:%M:%S"), 
-               'end' :datetime.datetime.strptime(item[2], "%Y-%m-%dT%H:%M:%S"), 
-               'mac': item[0] } for item in cursor.fetchall()]
-
-def mac_for(interval_list, month):
-    for interval in interval_list:
-        if interval['start'] <= month <= interval['end']:
-            return interval['mac']
-    return None
-
-def change_of_mac(interval_list, month):
-    for interval in interval_list:
-        if month <= interval['end'] <= month + relativedelta(months = +1):
-            return list.index(interval)
-    return None
-
-def do_it_all(connection, options, month):
-    result = []
-    interval_list = get_mac_intervals(connection, options)
-    i = change_of_mac(interval_list, month)
-    if i is None:
-        result.append(mac_for(interval_list, month))
-    else:
-        result.append(interval_list[i]['mac'])
-        result.append(interval_list[i+1]['mac'])
-    return result
-
-
 # -----------------------
 # Module global functions
 # -----------------------
     
-
-##############################################################################
-## NEW REFACTORED STUFF GOES HERE
-##############################################################################
 
 def available(name, month, connection):
     '''Return a count of readings related to this name, 

@@ -88,23 +88,43 @@ def multiple_instruments(name, tess_list, connection):
     # Even in the case of the change of MAC, there is almost 100% that the
     # zero point will change
     zero_point['changed'] = True
-    zero_point['current'] = {
+    zp1 = {
         'value':        tess_list[0][2], 
         'valid_since':  tess_list[0][11], 
         'valid_until':  tess_list[0][12], 
         'valid_state':  tess_list[0][13] 
     }
-    zero_point['previous'] = {
+    zp2 = {
         'value':        tess_list[1][2], 
         'valid_since':  tess_list[1][11], 
         'valid_until':  tess_list[1][12], 
         'valid_state':  tess_list[1][13] 
     }
 
-    mac_address['current']  = get_mac_valid_period(connection, name, mac1)
+    mac_record1 = get_mac_valid_period(connection, name, mac1)
     if mac1 != mac2 :
+        # Change of MAC means also change of ZP with almost 100% probab.
         mac_address['changed']  = True
-        mac_address['previous'] = get_mac_valid_period(connection, name, mac2)
+        mac_record2 = get_mac_valid_period(connection, name, mac2)
+        if mac_record2['valid_state'] == "Expired":
+            mac_address['current']  = mac_record1
+            mac_address['previous'] = mac_record2
+            zero_point['current']  = zp1
+            zero_point['previous'] = zp2
+        else:
+            mac_address['current']  = mac_record2
+            mac_address['previous'] = mac_record1
+            zero_point['current']  = zp2
+            zero_point['previous'] = zp1
+    else:
+        # No change of MAC means change of ZP.
+        mac_address['current'] = mac_record1
+        if zp2['valid_state'] == "Expired":
+            zero_point['current']  = zp1
+            zero_point['previous'] = zp2
+        else:
+            zero_point['current']  = zp1
+            zero_point['previous'] = zp2
 
     # Convert to unque set values   
    

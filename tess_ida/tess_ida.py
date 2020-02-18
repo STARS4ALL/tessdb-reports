@@ -63,10 +63,11 @@ class MonthIterator(object):
 
     def __next__(self):
         '''Make this this class an iterator'''
+        m = self.__month
         if self.__month == self.__end:
-            raise StopIteration
+            raise StopIteration  
         self.__month += relativedelta(months = +1)
-        return self.__month
+        return m
 
     def next(self):
         '''Puython 2.7 compatibility'''
@@ -233,7 +234,8 @@ def main():
         name = options.name        
         month_list = createMonthList(options)
         for month in month_list:
-            logging.debug("{0}: Fetching available data on {1}".format(name,month.strftime(MONTH_FORMAT)))
+            date = month.strftime(MONTH_FORMAT) # For printing purposes
+            logging.debug("{0}: Fetching available data on {1}".format(name, date))
             per_location_list = readings.available(name, month, connection)
             nlocations = len(per_location_list)
             if nlocations > 0:
@@ -242,11 +244,10 @@ def main():
                     count       = location[0]
                     location_id = location[1]
                     site        = location[2]
-                    date        = month.strftime(MONTH_FORMAT)
                     logging.info("{0}: Generating {2} monthly IDA file with {1} samples for location '{3}'".format(name, count, date, site.encode('utf-8')))
                     write_IDA_file(name, month, location_id, connection, options, single)
             else:
-                logging.info("{0}: No data for month {1}: skipping subdirs creation and IDA file generation".format(name,date))
+                logging.info("{0}: No data for month {1}: skipping subdirs creation and IDA file generation".format(name, date))
     except KeyboardInterrupt:
         logging.exception('{0}: Interrupted by user ^C'.format(name))
     except Exception as e:

@@ -42,11 +42,13 @@
 # Comment:  
 {% endif -%}
 {% if instrument.mac_address.changed -%}
-# Comment: MAC address was {{ instrument.mac_address.previous.value }} (until {{ instrument.mac_address.current.valid_until }})
+# Comment: MAC address was {{ instrument.mac_address.previous.value }} (until {{ instrument.mac_address.previous.valid_until }})
 {% else -%}
 # Comment:
 {% endif -%}
-{% if instrument.zero_point.changed -%}
+{% if instrument.mac_address.changed and instrument.zero_point.changed -%}
+# Comment: Previous Zero Point was {{ instrument.zero_point.previous.value }} due to MAC address change
+{% elif not instrument.mac_address.changed and instrument.zero_point.changed -%}
 # Comment: Previous Zero Point was {{ instrument.zero_point.previous.value }} (until {{ instrument.zero_point.previous.valid_until }})
 {% else -%}
 # Comment:
