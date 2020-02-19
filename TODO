@@ -1,7 +1,6 @@
 Prioridad Alta
 ==============
 
-* script all quitar los años y emplear --from-month 2016-01
 * diseñar INDICES MULTICOLUMNA para agilizar la generacion
 * tocar el ansible de despliegue para ver que parametros se pasan en el cron
 * merge de ramas
