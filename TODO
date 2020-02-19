@@ -12,7 +12,7 @@ Prioridad media
 * purgar bbdd de lecturas de instrumentos no starsXXX
 * quitar columna nombre de tess_t de una vez y UVIR -> UV-IR/cut
 * atualizar doc para decir quel son los campos gestionados (zp, filter, za, alt)
-* inttroducir observador.
+* inttroducir observador in the data model.
 
 Prioridad baja
 ==============

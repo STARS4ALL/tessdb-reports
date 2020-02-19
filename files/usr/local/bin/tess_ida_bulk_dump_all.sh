@@ -23,8 +23,8 @@ EOF
 DEFAULT_DATABASE="/var/dbase/tess.db"
 DEFAULT_REPORTS_DIR="/var/dbase/reports/IDA"
 
-years="2015 2016 2017 2018 2019 2020"
-months="01 02 03 04 05 06 07 08 09 10 11 12"
+START_DATE="2015-01"
+
 
 # get the name from the script name without extensions
 name=$(basename ${0%.sh})
@@ -44,11 +44,6 @@ if  [[ ! -f $dbase || ! -r $dbase ]]; then
         exit 1
 fi
 
-if  [[ ! -f $template || ! -r $template ]]; then
-        echo "IDA Template file $template does not exists or is not readable."
-        echo "Exiting"
-        exit 1
-fi
 
 dbname=$(basename $dbase)
 oper_dbname=$(basename $DEFAULT_DATABASE)
@@ -72,13 +67,8 @@ fi
 photometers=$(query_names ${dbase})
 # Loops over the instruments file and dumping data
 for instrument in $photometers; do
-    # Loop over years
-    for year in $years; do
-        for month in $months; do
-            echo "Generating IDA file for TESS $instrument for month $year-$month under ${out_dir}/${instrument}"
-            /usr/local/bin/tess_ida ${instrument} -m "${year}-${month}" -d ${dbase} -o ${out_dir}
-        done
-    done 
+    echo "Generating IDA file for TESS $instrument for month $year-$month under ${out_dir}/${instrument}"
+    /usr/local/bin/tess_ida ${instrument} --from-month ${START_DATE} -d ${dbase} -o ${out_dir}
 done
 
 
