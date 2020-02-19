@@ -158,7 +158,7 @@ def render_readings_line(dbreading, timezone):
             'mag':  dbreading[4],
             'zp':   dbreading[5],
         }
-    return "%(utc)s;%(local)s;%(tamb)s;%(tsky)s;%(freq)s;%(mag)s;%(zp)s" % record
+    return "%(utc)s;%(local)s;%(tamb).1f;%(tsky).1f;%(freq).3f;%(mag).2f;%(zp).2f" % record
 
 def render(template_path, context):
     if not os.path.exists(template_path):
@@ -205,8 +205,6 @@ def write_IDA_file(name, month, location_id, connection, options, single):
     context = {}
     template_path = resource_filename(__name__, 'templates/IDA-template.j2')
     create_directories(name, options.out_dir)
-    logging.debug("{0}: Fetching readings from the database".format(name))
-    cursor = readings.fetch(name, month, location_id, connection)
     logging.debug("{0}: Fetching location metadata from the database".format(name))
     context['location']   = metadata.location(location_id, connection)
     logging.debug("{0}: Fetching instrument metadata from the database".format(name))
@@ -218,6 +216,8 @@ def write_IDA_file(name, month, location_id, connection, options, single):
     suffix = '_' + str(location_id) if not single else ''
     file_name = name + "_" + month.strftime(MONTH_FORMAT) + suffix + ".dat"
     file_path = os.path.join(options.out_dir, name, file_name)
+    logging.debug("{0}: Fetching readings from the database".format(name))
+    cursor = readings.fetch(name, month, location_id, connection)
     logging.info("{0}: saving on to file {1}".format(name, file_name))
     write_IDA_header_file(header, file_path)
     write_IDA_body_file(name, month, cursor, timezone, file_path)
@@ -235,7 +235,7 @@ def main():
         month_list = createMonthList(options)
         for month in month_list:
             date = month.strftime(MONTH_FORMAT) # For printing purposes
-            logging.debug("{0}: Fetching available data on {1}".format(name, date))
+            logging.debug("{0}: Counting available data on {1}".format(name, date))
             per_location_list = readings.available(name, month, connection)
             nlocations = len(per_location_list)
             if nlocations > 0:

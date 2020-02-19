@@ -27,7 +27,7 @@ import logging
 # local imports
 # -------------
 
-from . import __version__, MONTH_FORMAT, TSTAMP_FORMAT, UNKNOWN
+from . import __version__, MONTH_FORMAT, TSTAMP_FORMAT, UNKNOWN, EXPIRED, CURRENT
 
 # ----------------
 # Module constants
@@ -98,7 +98,7 @@ def if_changed(tess_list, index):
     return var1, var2, changed
 
 def maybe_swap(var, var2):
-    if var2['valid_state'] == "Expired":
+    if var2['valid_state'] == EXPIRED:
         return var1, var2
     else:
         return var2, var1
@@ -125,7 +125,7 @@ def multiple_instruments(name, tess_list, connection):
         # Change of MAC means also change of ZP with almost 100% probab.
         mac_address['changed']  = True
         mac_record2 = get_mac_valid_period(connection, name, mac2)
-        if mac_record2['valid_state'] == "Expired":
+        if mac_record2['valid_state'] == EXPIRED:
             mac_address['current']  = mac_record1
             mac_address['previous'] = mac_record2
             zero_point['current']  = zp1
@@ -195,9 +195,9 @@ def available(name, month, location_id, connection):
     if l == 1:
         logging.debug("{0}: Only 1 tess_id for this location id {1} and month {2}".format(name,location_id, month.strftime(MONTH_FORMAT)))
     elif l == 2:
-        logging.debug("{0}: 2 tess_id for this location id {1} and month {2}".format(name, location_id, month.strftime(MONTH_FORMAT)))
+        logging.info("{0}: 2 tess_id ({3},{4}) for this location id {1} and month {2}".format(name, location_id, month.strftime(MONTH_FORMAT),tess_list[0][0], tess_list[1][0] ))
     elif l > 2:
-        logging.debug("{0}: Oh no! {3} tess_id for this location id {1} and month {2}".format(name, location_id, month.strftime(MONTH_FORMAT)), l)
+        logging.warning("{0}: Oh no! {3} tess_id for this location id {1} and month {2}".format(name, location_id, month.strftime(MONTH_FORMAT)), l)
     else:
         logging.error("{0}: THIS SHOULD NOT HAPPEN No data for location id {1} in month {2}".format(name, location_id, month.strftime(MONTH_FORMAT)))
     return tess_list, (l == 1)
