@@ -97,7 +97,7 @@ def if_changed(tess_list, index):
     changed = (tess_list[0][index] != tess_list[1][index])
     return var1, var2, changed
 
-def maybe_swap(var, var2):
+def maybe_swap(var1, var2):
     if var2['valid_state'] == EXPIRED:
         return var1, var2
     else:
