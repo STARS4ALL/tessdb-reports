@@ -11,6 +11,7 @@ Prioridad media
 * atualizar doc para decir quel son los campos gestionados (zp, filter, za, alt)
 * quitar columnas de la tabla de tess_units_t
 * inttroducir observador in the data model.
+* script de deteccion de eventos de start/stop y escribir a la BBDD
 
 Prioridad baja
 ==============
