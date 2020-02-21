@@ -67,7 +67,7 @@ fi
 photometers=$(query_names ${dbase})
 # Loops over the instruments file and dumping data
 for instrument in $photometers; do
-    echo "Generating IDA file for TESS $instrument for month $year-$month under ${out_dir}/${instrument}"
+    echo "Generating IDA file for TESS $instrument for ${START_DATE} under ${out_dir}/${instrument}"
     /usr/local/bin/tess_ida ${instrument} --from-month ${START_DATE} -d ${dbase} -o ${out_dir}
 done
 
