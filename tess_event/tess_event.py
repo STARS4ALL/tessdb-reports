@@ -142,7 +142,7 @@ def match_event(line):
     return None, None
 
 
-def process_line(line, context):
+def process_line(line, context, accum):
     global event_list
     event, matchobj = match_event(line)
    
@@ -163,12 +163,16 @@ def process_line(line, context):
     else:
         pass
     logging.debug(context)
-    event_list.append(copy.deepcopy(context))
+    accum.append(copy.deepcopy(context))
 
-def write_to_database(an_event_list, connection):
-    logging.info("writting to database a list of {0} events".format(len(an_event_list)))
+def write_to_database(accum, connection):
+    starts = [item for item in accum if item['event'] == 'started']
+    stops  = [item for item in accum if item['event'] == 'stopped']
+    logging.info("writting to database a list of {0} events, {1} 'started' and {2} 'stopped'".format(len(accum), len(starts), len(stops)))
     cursor = connection.cursor()
-    for event in an_event_list:
+    cursor.execute("SELECT COUNT(*) FROM event_log_t");
+    n1 = cursor.fetchone()[0]
+    for event in accum:
         cursor.execute(
             '''
             INSERT OR IGNORE INTO event_log_t (
@@ -189,14 +193,15 @@ def write_to_database(an_event_list, connection):
                 :comment
             );
             ''', event)
+    cursor.execute("SELECT COUNT(*) FROM event_log_t");
+    n2 = cursor.fetchone()[0]
+    logging.info("effectively written to database: {0} events".format(n2-n1))
     connection.commit()
 
 
 # -------------
 # MAIN FUNCTION
 # -------------
-
-event_list = []
 
 
 def main():
@@ -209,14 +214,14 @@ def main():
         context = get_context(options)
         connection = open_database(options.dbase)
         create_table(connection)
+        event_list = []
         for logfile_path in sorted(glob.glob("/var/log/tessdb*")):
             with open(logfile_path,'r') as fd:
                 logging.debug("processing file {0}".format(logfile_path))
                 for line in fd:
-                    process_line(line, context)
+                    process_line(line, context, event_list)
         if not options.dry_run and len(event_list):
             write_to_database(event_list, connection)
-
     except KeyboardInterrupt:
         logging.exception('{0}: Interrupted by user ^C'.format(name))
     except Exception as e:
