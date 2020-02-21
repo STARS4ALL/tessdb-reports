@@ -17,7 +17,7 @@ KEYWORDS     = 'Astronomy Python RaspberryPi'
 URL          = 'http://github.com/stars4all/tessdb-reports/'
 PACKAGES     = ["tess_ida"]
 DEPENDENCIES = [
-                  'python-dateutil'
+                  'python-dateutil',
                   'tabulate', 
                   'pytz',
                   'jinja2'
