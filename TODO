@@ -3,6 +3,25 @@ Prioridad Alta
 
 * diseñar INDICES MULTICOLUMNA para agilizar la generacion
 
+
+0) Event log table
+CREATE TABLE IF NOT EXISTS event_log_t
+(
+  when    TEXT NOT NULL,    -- ISO timestamp
+  what    TEXT NOT NULL,    -- Event key ('started,'stopped', etc)
+  where   TEXT NOT NULL,    -- Database where it takes place: 'production', 'testing'
+  who     TEXT NOT NULL,    -- Who produces the event, 'script', 'tessdb'
+  which   TEXT NOT NULL,    -- Which scope: 'global', 'stars1', etc.
+  how     TEXT NOT NULL,    -- How it was produced: 'cron job', 'manual'
+  comment TEXT,              -- i.e. "tessdb 2.5.3, Twisted 10.10.0"
+  PRIMARY KEY(when, what)
+
+);
+
+grep "Main loop terminated"
+grep "staring tessdb"
+ starting tessdb 2.5.3 on Python 3.6 using Twisted 19.10.0
+
 Prioridad media
 ===============
 
