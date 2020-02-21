@@ -12,7 +12,7 @@ SELECT name
 FROM tess_v 
 WHERE name like 'stars%' 
 AND valid_state = 'Current' 
-ORDER by CAST(substr(m.name, 6) as decimal) ASC;
+ORDER by CAST(substr(name, 6) as decimal) ASC;
 EOF
 }
 
