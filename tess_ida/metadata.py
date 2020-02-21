@@ -151,7 +151,7 @@ def multiple_instruments(name, tess_list, connection):
         # No change of MAC means change of ZP, filter, azimuth or altitude.
         mac_address['current'] = mac_record1
         zero_point['current'], zero_point['previous'] = maybe_swap(zp1, zp2)
-        filters['current'],    filters['previous']    = maybe_swap(filter1, filter1)
+        filters['current'],    filters['previous']    = maybe_swap(filter1, filter2)
         azimuth['current'],    azimuth['previous']    = maybe_swap(az1, az2)
         altitude['current'],   altitude['previous']   = maybe_swap(alt1, alt2)
 
@@ -191,6 +191,7 @@ def available(name, month, location_id, connection):
         ORDER BY i.valid_state ASC -- 'Current' before 'Expired'
         ''', row)
     tess_list = cursor.fetchall()
+    logging.debug("{0}: tess_list = {1}".format(name, tess_list)) 
     l = len(tess_list)
     if l == 1:
         logging.debug("{0}: Only 1 tess_id for this location id {1} and month {2}".format(name,location_id, month.strftime(MONTH_FORMAT)))
