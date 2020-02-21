@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS event_log_t
   which   TEXT NOT NULL,    -- Which scope: 'global', 'stars1', etc.
   how     TEXT NOT NULL,    -- How it was produced: 'cron job', 'manual'
   comment TEXT,              -- i.e. "tessdb 2.5.3, Twisted 10.10.0"
-  PRIMARY KEY(when, what)
+  PRIMARY KEY(when, what, where)
 
 );
 
