@@ -19,6 +19,7 @@ import argparse
 import sqlite3
 import os
 import os.path
+import copy
 
 import datetime
 
@@ -43,6 +44,21 @@ from . import __version__, TSTAMP_FORMAT
 DEFAULT_DBASE  = "/var/dbase/tess.db"
 DEFAULT_LOGDIR = "/var/log"
 
+
+EVENTS = (
+    {
+        'name'    : 'started',
+        'pattern' : r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})[+-]\d{4} \[.+\] starting tessdb (\d{1,2}\.\d{1,2}\.\d{1,2}) on Python \d{1}\.\d{1} using (Twisted \d{1,2}\.\d{1,2}\.\d{1,2})',       
+    },
+    {
+        'name'    : 'stopped',
+        'pattern' : r'^^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})[+-]\d{4} \[-\] Main loop terminated.',       
+    },
+    
+)
+EVENTS_PATTERNS = [ re.compile(event['pattern']) for event in EVENTS ]
+
+
 # ---------------------
 # Module global classes
 # ---------------------
@@ -58,6 +74,8 @@ def createParser():
     parser = argparse.ArgumentParser(prog=name, description="TESS Event log file parser " + __version__)
     parser.add_argument('-d', '--dbase',   default=DEFAULT_DBASE, help='SQLite database full file path')
     parser.add_argument('-t', '--testing', action='store_true', help='Latest month only.')
+    parser.add_argument('-a', '--automatic', action='store_true', help='Launched automatically (i..e cron job).')
+    parser.add_argument('--dry-run', action='store_true', help='Do not insert into the database.')
     group2 = parser.add_mutually_exclusive_group()
     group2.add_argument('-v', '--verbose', action='store_true', help='Verbose output.')
     group2.add_argument('-q', '--quiet',   action='store_true', help='Quiet output.')
@@ -66,6 +84,15 @@ def createParser():
 # -------------------
 # AUXILIARY FUNCTIONS
 # -------------------
+
+       
+
+def get_context(options):
+    return {
+        'source'     : os.path.split(os.path.dirname(sys.argv[0]))[-1],
+        'environment': "testing"  if options.testing   else "production",
+        'method'     : "cron job" if options.automatic else "manual",
+    }
 
 
 def configureLogging(options):
@@ -77,11 +104,13 @@ def configureLogging(options):
         level = logging.INFO
     logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', level=level)
 
+
 def open_database(dbase_path):
     if not os.path.exists(dbase_path):
        raise IOError("No SQLite3 Database file found at {0}. Exiting ...".format(dbase_path))
     logging.info("Opening database {0}".format(dbase_path))
     return sqlite3.connect(dbase_path)
+
 
 def create_table(connection):
     logging.debug("creating event_log_t table")
@@ -96,38 +125,78 @@ def create_table(connection):
             source        TEXT NOT NULL,    -- Who produces the event, 'script', 'tessdb'
             scope         TEXT NOT NULL,    -- Which scope: 'global', 'stars1', etc.
             method        TEXT NOT NULL,    -- How it was produced: 'cron job', 'manual'
-            comment TEXT,              -- i.e. "tessdb 2.5.3, Twisted 10.10.0"
+            comment       TEXT,              -- i.e. "tessdb 2.5.3, Twisted 10.10.0"
             PRIMARY KEY(tstamp, event, environment)
         );
         ''')
     connection.commit()
 
-def process_line(line, connection):
-    pass
-    
+
+def match_event(line):
+    '''Returns matched command descriptor or None'''
+    for regexp in EVENTS_PATTERNS:
+        matchobj = regexp.search(line)
+        if matchobj:
+            logging.debug("matched {0}".format(EVENTS[EVENTS_PATTERNS.index(regexp)]['name']))
+            return EVENTS[EVENTS_PATTERNS.index(regexp)], matchobj
+    return None, None
+
+
+def process_line(line, context):
+    global event_list
+    event, matchobj = match_event(line)
+   
+    context['tstamp']  = None
+    context['scope']   = None
+    context['comment'] = None
+    if not event:
+        return
+    context['event'] = event['name']
+    if event['name'] == 'started':
+        context['tstamp'] = matchobj.group(1)
+        context['scope']   = "global"
+        context['comment'] = "tessdb " + matchobj.group(2) + ', ' + matchobj.group(3)
+    elif event['name'] == 'stopped':
+        context['tstamp'] = matchobj.group(1)
+        context['scope']   = "global"
+        context['comment'] = None
+    else:
+        pass
+    logging.debug(context)
+    event_list.append(copy.deepcopy(context))
+
+def write_to_database(an_event_list, connection):
+    logging.info("writting to database a list of {0} events".format(len(an_event_list)))
+    cursor = connection.cursor()
+    for event in an_event_list:
+        cursor.execute(
+            '''
+            INSERT OR IGNORE INTO event_log_t (
+                tstamp,
+                event,
+                environment,
+                source,
+                scope,
+                method,
+                comment
+            ) VALUES (
+                :tstamp,
+                :event,
+                :environment,
+                :source,
+                :scope,
+                :method,
+                :comment
+            );
+            ''', event)
+    connection.commit()
+
+
 # -------------
 # MAIN FUNCTION
 # -------------
 
-'''
-2020-02-04T12:21:47+0000 [tessdb#info] starting tessdb 2.5.3 on Python 3.6 using Twisted 19.10.0
-'''
-# Unsolicited Responses Patterns
-EVENTS_ = (
-    {
-        'name'    : 'startes',
-        'pattern' : r'^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})[+-]\d{4} \[.+\] starting tessdb ',       
-    },
-    {
-        'name'    : 'stopped',
-        'pattern' : '^<fm (\d{5})><tA ([+-]\d{4})><tO ([+-]\d{4})><mZ ([+-]\d{4})>',       
-    },
-    
-)
-
-
-UNSOLICITED_PATTERNS = [ re.compile(ur['pattern']) for ur in UNSOLICITED_RESPONSES ]
-
+event_list = []
 
 
 def main():
@@ -137,13 +206,16 @@ def main():
     try:
         options = createParser().parse_args(sys.argv[1:])
         configureLogging(options)
+        context = get_context(options)
         connection = open_database(options.dbase)
         create_table(connection)
         for logfile_path in sorted(glob.glob("/var/log/tessdb*")):
             with open(logfile_path,'r') as fd:
                 logging.debug("processing file {0}".format(logfile_path))
                 for line in fd:
-                    process_line(line, connection)
+                    process_line(line, context)
+        if not options.dry_run and len(event_list):
+            write_to_database(event_list, connection)
 
     except KeyboardInterrupt:
         logging.exception('{0}: Interrupted by user ^C'.format(name))
