@@ -57,7 +57,7 @@ def createParser():
     name = os.path.split(os.path.dirname(sys.argv[0]))[-1]
     parser = argparse.ArgumentParser(prog=name, description="TESS Event log file parser " + __version__)
     parser.add_argument('-d', '--dbase',   default=DEFAULT_DBASE, help='SQLite database full file path')
-    parser.add_argument('-t', '--testing', action='store_true', help='Latest month only.')
+    parser.add_argument('-t', '--testing', action='store_true', help='Testing environment.')
     group2 = parser.add_mutually_exclusive_group()
     group2.add_argument('-v', '--verbose', action='store_true', help='Verbose output.')
     group2.add_argument('-q', '--quiet',   action='store_true', help='Quiet output.')
