@@ -15,7 +15,7 @@ DESCRIPTION  = 'Command line tool and SQL scripts to generate reports from tessd
 LICENSE      = 'MIT'
 KEYWORDS     = 'Astronomy Python RaspberryPi'
 URL          = 'http://github.com/stars4all/tessdb-reports/'
-PACKAGES     = ["tess_ida","tess_event"]
+PACKAGES     = ["tess_ida"]
 DEPENDENCIES = [
                   'python-dateutil',
                   'tabulate', 
@@ -46,7 +46,6 @@ DATA_FILES  = [
   ('/usr/local/bin',         [
                               'files/usr/local/bin/tessdb_index.sh',
                               'files/usr/local/bin/tess_ida',
-                              'files/usr/local/bin/tess_event',
                               'files/usr/local/bin/tess_bulk_dump.sh', 
                               'files/usr/local/bin/tess_daily_summary.sh', 
                               'files/usr/local/bin/tess_life_span.sh', 
