@@ -18,7 +18,8 @@ dbases="$(ls -1 $dbases)"
 create_indices() {
 dbase=$1
 sqlite3 ${dbase} <<EOF
-CREATE INDEX IF NOT EXISTS tess_readings_i ON tess_readings_t(tess_id,location_id,date_id,time_id);
+-- Create a covering index for locations
+CREATE INDEX IF NOT EXISTS tess_readings_i ON tess_readings_t(tess_id, date_id, time_id, location_id);
 EOF
 }
 
