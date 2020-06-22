@@ -22,20 +22,22 @@ EOF
 
 DEFAULT_DATABASE="/var/dbase/tess.db"
 DEFAULT_REPORTS_DIR="/var/dbase/reports/IDA"
-
-START_DATE="2015-01"
+DEFAULT_START_DATE="2015-01"
 
 
 # get the name from the script name without extensions
 name=$(basename ${0%.sh})
 
+# Gets the month timestamp from the command line
+from_month="${1:-$DEFAULT_START_DATE}"
+
 # Either the default or the rotated tess.db-* database
-dbase="${1:-$DEFAULT_DATABASE}"
+dbase="${2:-$DEFAULT_DATABASE}"
 # wildcard expansion ...
 dbase="$(ls -1 $dbase)"
 
 # Output directory is created if not exists inside the inner script
-out_dir="${2:-$DEFAULT_REPORTS_DIR}"
+out_dir="${3:-$DEFAULT_REPORTS_DIR}"
 
 
 if  [[ ! -f $dbase || ! -r $dbase ]]; then
@@ -68,7 +70,7 @@ photometers=$(query_names ${dbase})
 # Loops over the instruments file and dumping data
 for instrument in $photometers; do
     echo "Generating IDA file for TESS $instrument for ${START_DATE} under ${out_dir}/${instrument}"
-    /usr/local/bin/tess_ida ${instrument} --from-month ${START_DATE} -d ${dbase} -o ${out_dir}
+    /usr/local/bin/tess_ida ${instrument} --from-month ${from_month} -d ${dbase} -o ${out_dir}
 done
 
 
