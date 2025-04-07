@@ -3,8 +3,8 @@
 # 2. uv add --dev rust-just
 # 3. Use just within the activated environment
 
-pkg := "tessdb-server"
-module := "tessdb"
+pkg := "tessdb-reports"
+module := "tessdb.reports"
 
 drive_uuid := "77688511-78c5-4de3-9108-b631ff823ef4"
 user :=  file_stem(home_dir())
