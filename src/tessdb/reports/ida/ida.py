@@ -53,7 +53,7 @@ IDA_TEMPLATE = 'IDA-template-4c.j2'
 # -----------------------
 
 log = logging.getLogger(__name__)
-
+# package is tessdb.reports.ida
 package = ".".join(__name__.split('.')[:-1])
 
 # ---------------------
