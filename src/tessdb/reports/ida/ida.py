@@ -54,7 +54,7 @@ IDA_TEMPLATE = 'IDA-template-4c.j2'
 
 log = logging.getLogger(__name__)
 
-package = __name__.split('.')[0]
+package = ".".join(__name__.split('.')[:-1])
 
 # ---------------------
 # Module global classes
