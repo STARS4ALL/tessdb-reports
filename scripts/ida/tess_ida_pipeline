@@ -214,7 +214,7 @@ log INFO "Start executing pipeline"
 if [[ "${step}" == "all" ]]; then   
     wait_for_backup ${date} ${src_user} ${src_dbase_host} ${src_dbase_dir} ${log_file}
     remote_backup ${date} ${src_user} ${src_dbase_host} ${src_dbase_dir} ${dst_dbase_dir} ${log_file}
-    ida_generation ${dbase} ${ida_dir} ${log_file}
+    ida_generation ${month} ${dbase} ${ida_dir} ${log_file}
     sync_nextcloud ${ida_dir} ${web_dir}
 elif [[ "${step}" == "1" ]]; then
     wait_for_backup ${date} ${src_user} ${src_dbase_host} ${src_dbase_dir} ${log_file}
