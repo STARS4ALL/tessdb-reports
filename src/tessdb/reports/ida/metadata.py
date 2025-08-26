@@ -43,7 +43,7 @@ observer_data = {}
 def number_of_data_columns(nchannels):
     return 8 if nchannels == 1 else 17
 
-def tess_type(name, connection):
+def tess_model(name, connection):
     row = {'name': name, }
     cursor = connection.cursor()
     cursor.execute(
@@ -181,17 +181,20 @@ def instrument_in_several_locations(name, tess_list, connection):
     }
 
 def available(name, month, location_id, connection):
-    instrument_type = tess_type(name, connection)
-    if instrument_type is None:
+    instrument_model = tess_model(name, connection)
+    if instrument_model is None:
         raise ValueError(f"Could not find: {name}")
-    if instrument_type[0] == 'TESS-W':
+    if instrument_model[0] == 'TESS-W':
         log.debug("[%s] photometer is a TESS-W", name)
         return available_tessw(name, month, location_id, connection)
-    elif instrument_type[0] == 'TESS4C':
+    elif instrument_model[0] == 'TESS-WDL':
+        log.debug("[%s] photometer is a TESS-WDL", name)
+        return available_tessw(name, month, connection)
+    elif instrument_model[0] == 'TESS4C':
         log.debug("[%s] photometer is a TESS4C", name)
         return available_tess4c(name, month, location_id, connection)
     else:
-        raise NotImplementedError(f"Unknown photometer model: {instrument_type}")
+        raise NotImplementedError(f"Unknown photometer model: {instrument_model}")
 
 def available_tessw(name, month, location_id, connection):
     '''Return a a list of TESS for the given month and a given location_id'''
@@ -207,11 +210,13 @@ def available_tessw(name, month, location_id, connection):
         JOIN date_t          AS d USING (date_id)
         JOIN time_t          AS t USING (time_id)
         JOIN tess_t          AS i USING (tess_id)
-        WHERE i.mac_address IN (SELECT mac_address FROM name_to_mac_t WHERE name == :name)                       -- THIS WILL HAVE TO BE REMOVED FOR TESS-4C
+        WHERE i.mac_address IN                       
+            (SELECT mac_address FROM name_to_mac_t WHERE name == :name 
+                AND DATETIME(:from_date) BETWEEN DATETIME(valid_since) AND DATETIME(valid_until)) -- THIS WILL HAVE TO BE REMOVED FOR TESS-4C
         AND   r.location_id == :location_id
-        AND     datetime(d.sql_date || 'T' || t.time || '.000') 
-        BETWEEN datetime(:from_date) 
-        AND     datetime(:from_date, '+1 month')
+        AND     DATETIME(d.sql_date || 'T' || t.time || '.000') 
+        BETWEEN DATETIME(:from_date) 
+        AND     DATETIME(:from_date, '+1 month')
         ORDER BY i.valid_state ASC -- 'Current' before 'Expired'
         ''', row)
     tess_list = cursor.fetchall()
@@ -242,11 +247,13 @@ def available_tess4c(name, month, location_id, connection):
         JOIN date_t          AS d USING (date_id)
         JOIN time_t          AS t USING (time_id)
         JOIN tess_t          AS i USING (tess_id)
-        WHERE i.mac_address IN (SELECT mac_address FROM name_to_mac_t WHERE name == :name)                       -- THIS WILL HAVE TO BE REMOVED FOR TESS-4C
+        WHERE i.mac_address IN                        
+          (SELECT mac_address FROM name_to_mac_t WHERE name == :name 
+            AND DATETIME(:from_date) BETWEEN DATETIME(valid_since) AND DATETIME(valid_until)) -- THIS WILL HAVE TO BE REMOVED FOR TESS-4C
         AND   r.location_id == :location_id
-        AND     datetime(d.sql_date || 'T' || t.time || '.000') 
-        BETWEEN datetime(:from_date) 
-        AND     datetime(:from_date, '+1 month')
+        AND     DATETIME(d.sql_date || 'T' || t.time || '.000') 
+        BETWEEN DATETIME(:from_date) 
+        AND     DATETIME(:from_date, '+1 month')
         ORDER BY i.valid_state ASC -- 'Current' before 'Expired'
         ''', row)
     tess_list = cursor.fetchall()
@@ -270,7 +277,6 @@ def available_tess4c(name, month, location_id, connection):
 # Single instrument refers to an isntrument in a single location (i.e. not moved)
 def instrument(name, month, location_id, connection):
     log.debug("[%s]: Exporting instrument data for month %s", name, month)
-    context = {}
     tess_list_per_location, is_single = available(name, month, location_id, connection)
     if is_single:
         return instrument_in_one_location(name, tess_list_per_location[0])

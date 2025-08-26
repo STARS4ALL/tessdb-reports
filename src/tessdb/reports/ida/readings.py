@@ -23,7 +23,7 @@ import logging
 
 from .. import  TSTAMP_FORMAT
 
-from .metadata import tess_type
+from .metadata import tess_model
 
 # ----------------
 # Module constants
@@ -42,17 +42,20 @@ log = logging.getLogger(__name__)
     
 
 def available(name, month, connection):
-    instrument_type = tess_type(name, connection)
-    if instrument_type is None:
+    instrument_model = tess_model(name, connection)
+    if instrument_model is None:
         raise ValueError(f"Could not find: {name}")
-    if instrument_type[0] == 'TESS-W':
+    if instrument_model[0] == 'TESS-W':
         log.debug("[%s] photometer is a TESS-W", name)
         return available_tessw(name, month, connection)
-    elif instrument_type[0] == 'TESS4C':
+    elif instrument_model[0] == 'TESS-WDL':
+        log.debug("[%s] photometer is a TESS-WDL", name)
+        return available_tessw(name, month, connection)
+    elif instrument_model[0] == 'TESS4C':
         log.debug("[%s] photometer is a TESS4C", name)
         return available_tess4c(name, month, connection)
     else:
-        raise NotImplementedError(f"Unknown photometer model: {instrument_type}")
+        raise NotImplementedError(f"Unknown photometer model: {instrument_model}")
 
 def available_tessw(name, month, connection):
     '''Return a count of readings related to this name, 
@@ -67,10 +70,12 @@ def available_tessw(name, month, connection):
         JOIN time_t          AS t USING (time_id)
         JOIN tess_t          AS i USING (tess_id)
         JOIN location_t      AS l USING(location_id)
-        WHERE i.mac_address IN (SELECT mac_address FROM name_to_mac_t WHERE name == :name)
-        AND     datetime(d.sql_date || 'T' || t.time || '.000') 
-        BETWEEN datetime(:from_date) 
-        AND     datetime(:from_date, '+1 month')
+        WHERE i.mac_address IN 
+          (SELECT mac_address FROM name_to_mac_t WHERE name == :name 
+              AND DATETIME(:from_date) BETWEEN DATETIME(valid_since) AND DATETIME(valid_until))
+        AND     DATETIME(d.sql_date || 'T' || t.time || '.000') 
+        BETWEEN DATETIME(:from_date) 
+        AND     DATETIME(:from_date, '+1 month')
         GROUP BY r.location_id
         ''', row)
     return cursor.fetchall()
@@ -89,27 +94,29 @@ def available_tess4c(name, month, connection):
         JOIN time_t          AS t USING (time_id)
         JOIN tess_t          AS i USING (tess_id)
         JOIN location_t      AS l USING(location_id)
-        WHERE i.mac_address IN (SELECT mac_address FROM name_to_mac_t WHERE name == :name)
-        AND     datetime(d.sql_date || 'T' || t.time || '.000') 
-        BETWEEN datetime(:from_date) 
-        AND     datetime(:from_date, '+1 month')
+        WHERE i.mac_address IN
+           (SELECT mac_address FROM name_to_mac_t WHERE name == :name 
+                AND DATETIME(:from_date) BETWEEN DATETIME(valid_since) AND DATETIME(valid_until))
+        AND     DATETIME(d.sql_date || 'T' || t.time || '.000') 
+        BETWEEN DATETIME(:from_date) 
+        AND     DATETIME(:from_date, '+1 month')
         GROUP BY r.location_id
         ''', row)
     return cursor.fetchall()
 
 
 def fetch(name, month, location_id, connection):
-    instrument_type = tess_type(name, connection)
-    if instrument_type is None:
+    instrument_model = tess_model(name, connection)
+    if instrument_model is None:
         raise ValueError(f"Could not find: {name}")
-    if instrument_type[0] == 'TESS-W':
+    if instrument_model[0] == 'TESS-W':
         log.debug("[%s] photometer is a TESS-W", name)
         return fetch_tessw(name, month, location_id, connection)
-    elif instrument_type[0] == 'TESS4C':
+    elif instrument_model[0] == 'TESS4C':
         log.debug("[%s] photometer is a TESS4C", name)
         return fetch_tess4c(name, month, location_id, connection)
     else:
-        raise NotImplementedError(f"Unknown photometer model: {instrument_type}")
+        raise NotImplementedError(f"Unknown photometer model: {instrument_model}")
 
 
 
@@ -124,10 +131,12 @@ def fetch_tessw(name, month, location_id, connection):
         JOIN date_t     as d USING (date_id)
         JOIN time_t     as t USING (time_id)
         JOIN tess_t     as i USING (tess_id)
-        WHERE i.mac_address IN (SELECT mac_address FROM name_to_mac_t WHERE name == :name)
+        WHERE i.mac_address IN 
+           (SELECT mac_address FROM name_to_mac_t WHERE name == :name 
+               AND DATETIME(:from_date) BETWEEN DATETIME(valid_since) AND DATETIME(valid_until))
         AND r.location_id == :location_id
-        AND datetime(timestamp) BETWEEN datetime(:from_date) 
-                                AND     datetime(:from_date, '+1 month')
+        AND datetime(timestamp) BETWEEN DATETIME(:from_date) 
+                                AND     DATETIME(:from_date, '+1 month')
         ORDER BY r.date_id ASC, r.time_id ASC
         ''', row)
     return cursor
@@ -144,10 +153,12 @@ def fetch_tess4c(name, month, location_id, connection):
         JOIN date_t     as d USING (date_id)
         JOIN time_t     as t USING (time_id)
         JOIN tess_t     as i USING (tess_id)
-        WHERE i.mac_address IN (SELECT mac_address FROM name_to_mac_t WHERE name == :name)
+        WHERE i.mac_address IN
+            (SELECT mac_address FROM name_to_mac_t WHERE name == :name 
+                AND DATETIME(:from_date) BETWEEN DATETIME(valid_since) AND DATETIME(valid_until))
         AND r.location_id == :location_id
-        AND datetime(timestamp) BETWEEN datetime(:from_date) 
-                                AND     datetime(:from_date, '+1 month')
+        AND datetime(timestamp) BETWEEN DATETIME(:from_date) 
+                                AND     DATETIME(:from_date, '+1 month')
         ORDER BY r.date_id ASC, r.time_id ASC
         ''', row)
     return cursor
