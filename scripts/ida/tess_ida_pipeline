@@ -125,14 +125,14 @@ ida_generation() {
         if [[ "${month}" = "latest" ]];
         then
             log INFO "Generating latest month IDA file for TESS ${instrument} under ${ida_dir}/${instrument}" | ${TEE} -a ${log_file}
-            ${TESS_IDA} ${instrument} --log-file ${log_file} --latest-month -d ${dbase} -o ${ida_dir} 
+            ${NICE} -n 19 ${IONICE} -c3 ${TESS_IDA} ${instrument} --log-file ${log_file} --latest-month -d ${dbase} -o ${ida_dir} 
         elif [[ "$month" = "previous" ]];
         then
             log INFO "Generating previous month IDA file for TESS ${instrument} under ${ida_dir}/${instrument}" | ${TEE} -a ${log_file}
-            ${TESS_IDA} ${instrument} --log-file ${log_file} --previous-month -d ${dbase} -o ${ida_dir}
+            ${NICE} -n 19 ${IONICE} -c3 ${TESS_IDA} ${instrument} --log-file ${log_file} --previous-month -d ${dbase} -o ${ida_dir}
         else
             log INFO "Generating IDA file for TESS ${instrument} for month ${month} under ${ida_dir}/${instrument}" | ${TEE} -a ${log_file}
-            ${TESS_IDA} ${instrument} --log-file ${log_file} --for-month ${month} -d ${dbase} -o ${ida_dir}
+            ${NICE} -n 19 ${IONICE} -c3 ${TESS_IDA} ${instrument} --log-file ${log_file} --for-month ${month} -d ${dbase} -o ${ida_dir}
         fi
     done
 }
@@ -224,6 +224,9 @@ elif [[ "${step}" == "2" ]]; then
 elif [[ "${step}" == "3" ]]; then
     ida_generation ${month} ${dbase} ${ida_dir} ${log_file}
 elif [[ "${step}" == "4" ]]; then
+    sync_nextcloud ${ida_dir} ${web_dir}
+elif [[ "${step}" == "5" ]]; then
+    ida_generation ${month} ${dbase} ${ida_dir} ${log_file}
     sync_nextcloud ${ida_dir} ${web_dir}
 else
     log ERROR "Unsupported pipeline step ${step}"
