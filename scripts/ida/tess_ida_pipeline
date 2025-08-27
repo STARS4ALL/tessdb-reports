@@ -125,14 +125,14 @@ ida_generation() {
         if [[ "${month}" = "latest" ]];
         then
             log INFO "Generating latest month IDA file for TESS ${instrument} under ${ida_dir}/${instrument}" | ${TEE} -a ${log_file}
-            ${NICE} -n 19 ${IONICE} -c3 ${TESS_IDA} ${instrument} --log-file ${log_file} --latest-month -d ${dbase} -o ${ida_dir} 
+            ${TESS_IDA} ${instrument} --log-file ${log_file} --latest-month -d ${dbase} -o ${ida_dir} 
         elif [[ "$month" = "previous" ]];
         then
             log INFO "Generating previous month IDA file for TESS ${instrument} under ${ida_dir}/${instrument}" | ${TEE} -a ${log_file}
-            ${NICE} -n 19 ${IONICE} -c3 ${TESS_IDA} ${instrument} --log-file ${log_file} --previous-month -d ${dbase} -o ${ida_dir}
+            ${TESS_IDA} ${instrument} --log-file ${log_file} --previous-month -d ${dbase} -o ${ida_dir}
         else
             log INFO "Generating IDA file for TESS ${instrument} for month ${month} under ${ida_dir}/${instrument}" | ${TEE} -a ${log_file}
-            ${NICE} -n 19 ${IONICE} -c3 ${TESS_IDA} ${instrument} --log-file ${log_file} --for-month ${month} -d ${dbase} -o ${ida_dir}
+            ${TESS_IDA} ${instrument} --log-file ${log_file} --for-month ${month} -d ${dbase} -o ${ida_dir}
         fi
     done
 }
