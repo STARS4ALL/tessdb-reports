@@ -65,7 +65,6 @@ where = ["src"]
 script-files = [
     "scripts/reports/tess_readings_unassigned.sh",
     "scripts/reports/tess_geolist.sh",
-    "scripts/ida/tess_ida_bulk_dump_selective",
     "scripts/ida/tess_ida_pipeline",
 ]
 
