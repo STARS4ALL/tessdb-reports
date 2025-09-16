@@ -36,6 +36,9 @@ DEFAULT_IDA_DIR="/var/dbase/reports/IDA"
 DEFAULT_MONTH="latest"
 DEFAULT_LOG_FILE=/var/log/ida_daily.log
 
+# For IDA selective regeneration
+DEFAULT_REGEN_DIR=/var/dbase/regen
+
 # For WebDAV synchronization to NextCloud
 DEFAULT_WEB_DIR="IDA"
 # WebDAV Server is identified by a tag in .config/rclone/rclone.conf
@@ -142,6 +145,34 @@ ida_generation() {
     done
 }
 
+ida_selective_gen() {
+    local regen_dir=$1
+    local dbase=$2
+    local ida_dir=$3
+    local log_file=$4
+    if  [[ ! -d "${regen_dir}/input" ]]; then
+            log INFO "making IDA regeneration files dir structure under ${regen_dir}" | ${TEE} -a ${log_file}
+            mkdir -p "${regen_dir}/input"
+            mkdir -p "${regen_dir}/processed"
+    fi
+    # Get selective photometers list
+    local photometers=$(ls -1 ${regen_dir}/input)
+    for instrument in $photometers; do
+        from_month=$(cat ${regen_dir}/input/${instrument})
+        if [[ -z "$from_month" ]]; then
+            from_month=${DEFAULT_START_DATE}
+        fi
+        log INFO "Selective IDA file for TESS $instrument from ${from_month} under ${out_dir}/${instrument}" | ${TEE} -a ${log_file}
+        ${TESS_IDA} ${instrument} --log-file ${log_file} --from-month ${from_month} -d ${dbase} -o ${out_dir}
+        log INFO "Moving control file ${regen_dir}/input/${instrument} => ${regen_dir}/processed/${instrument}" | ${TEE} -a ${log_file}
+        if  [[ -f ${regen_dir}/processed/${instrument} ]]; then
+          log WARNING "Moving previous input control file to ${regen_dir}/processed/${instrument}.${DATE}" | ${TEE} -a ${log_file}
+          mv ${regen_dir}/processed/${instrument} ${regen_dir}/processed/${instrument}.${DATE}
+        fi
+        mv ${regen_dir}/input/${instrument} ${regen_dir}/processed/${instrument}
+    done
+}
+
 sync_nextcloud() {
     local ida_dir=$1
     local web_dir=$2
@@ -198,6 +229,9 @@ while getopts ":hu:s:d:o:i:m:w:l:p:" opt; do
     p)
         step="${OPTARG}"
         ;;
+    r)
+        regen_dir="${OPTARG}"
+        ;;
     h)
         help
         exit 0
@@ -221,6 +255,7 @@ if [[ "${step}" == "all" ]]; then
     wait_for_backup ${date} ${src_user} ${src_dbase_host} ${src_dbase_dir} ${log_file}
     remote_backup ${date} ${src_user} ${src_dbase_host} ${src_dbase_dir} ${dst_dbase_dir} ${log_file}
     ida_generation ${month} ${dbase} ${ida_dir} ${log_file}
+    ida_selective_gen ${regen_dir} ${dbase} ${ida_dir} ${log_file}
     sync_nextcloud ${ida_dir} ${web_dir}
 elif [[ "${step}" == "1" ]]; then
     wait_for_backup ${date} ${src_user} ${src_dbase_host} ${src_dbase_dir} ${log_file}
@@ -228,10 +263,12 @@ elif [[ "${step}" == "2" ]]; then
      remote_backup ${date} ${src_user} ${src_dbase_host} ${src_dbase_dir} ${dst_dbase_dir} ${log_file}
 elif [[ "${step}" == "3" ]]; then
     ida_generation ${month} ${dbase} ${ida_dir} ${log_file}
+    ida_selective_gen ${regen_dir} ${dbase} ${ida_dir} ${log_file}
 elif [[ "${step}" == "4" ]]; then
     sync_nextcloud ${ida_dir} ${web_dir}
 elif [[ "${step}" == "5" ]]; then
     ida_generation ${month} ${dbase} ${ida_dir} ${log_file}
+    ida_selective_gen ${regen_dir} ${dbase} ${ida_dir} ${log_file}
     sync_nextcloud ${ida_dir} ${web_dir}
 else
     log ERROR "Unsupported pipeline step ${step}"
