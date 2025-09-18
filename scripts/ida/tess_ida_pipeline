@@ -199,7 +199,7 @@ log_file="${DEFAULT_LOG_FILE}"
 step="${DEFAULT_PIPE_STAGE}"
 date=$(/usr/bin/date +%Y%m%d)
 
-while getopts ":hu:s:d:o:i:m:w:l:p:" opt; do
+while getopts ":hu:s:d:o:i:m:w:l:p:r:" opt; do
     case ${opt} in
     u)
         src_user="${OPTARG}"
