@@ -200,7 +200,14 @@ ida_from_month() {
     local photometers=$(ls -1 ${regen_dir}/input)
     for instrument in $photometers; do
         from_month=$(cat ${regen_dir}/input/${instrument})
-        do_ida_from_month $instrument $from_month $regen_dir $dbase $ida_dir $log_file
+        if [[ "$instrument" = "all" ]]; then
+            local all_photometers=$(query_names ${dbase})
+            for instrument2 in $all_photometers; do
+                do_ida_from_month $instrument2 $from_month $regen_dir $dbase $ida_dir $log_file
+            done
+        else
+            do_ida_from_month $instrument $from_month $regen_dir $dbase $ida_dir $log_file
+        fi
     done
 }
 
@@ -218,7 +225,14 @@ ida_for_month() {
     local photometers=$(ls -1 ${regen_dir}/input)
     for instrument in $photometers; do
         for_month=$(cat ${regen_dir}/input/${instrument})
-        do_ida_for_month $instrument $for_month $regen_dir $dbase $ida_dir $log_file
+        if [[ "$instrument" = "all" ]]; then
+            local all_photometers=$(query_names ${dbase})
+            for instrument2 in $all_photometers; do
+                do_ida_for_month $instrument2 $for_month $regen_dir $dbase $ida_dir $log_file
+            done
+        else
+            do_ida_for_month $instrument $for_month $regen_dir $dbase $ida_dir $log_file
+        fi
     done
 }
 
