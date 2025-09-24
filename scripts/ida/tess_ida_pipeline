@@ -328,12 +328,15 @@ elif [[ "${step}" == "1" ]]; then
 elif [[ "${step}" == "2" ]]; then
      remote_backup ${date} ${src_user} ${src_dbase_host} ${src_dbase_dir} ${dst_dbase_dir} ${log_file}
 elif [[ "${step}" == "3" ]]; then
-    ida_generation ${month} ${dbase} ${ida_dir} ${log_file}
     ida_from_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
     ida_for_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
 elif [[ "${step}" == "4" ]]; then
-    sync_nextcloud ${ida_dir} ${web_dir}
+    ida_generation ${month} ${dbase} ${ida_dir} ${log_file}
+    ida_from_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
+    ida_for_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
 elif [[ "${step}" == "5" ]]; then
+    sync_nextcloud ${ida_dir} ${web_dir}
+elif [[ "${step}" == "6" ]]; then
     ida_generation ${month} ${dbase} ${ida_dir} ${log_file}
     ida_from_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
     ida_for_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
