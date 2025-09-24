@@ -145,6 +145,47 @@ ida_generation() {
     done
 }
 
+do_ida_from_month() {
+    local instrument=$1
+    local from_month=$2
+    local regen_dir=$3
+    local dbase=$4
+    local out_dir=$5
+    local log_file=$6
+    if [[ -z "$from_month" ]]; then
+        from_month=${DEFAULT_START_DATE}
+    fi
+    log INFO "Selective IDA file for TESS $instrument from ${from_month} under ${out_dir}/${instrument}" | ${TEE} -a ${log_file}
+    ${TESS_IDA} ${instrument} --log-file ${log_file} --from-month ${from_month} -d ${dbase} -o ${out_dir}
+    log INFO "Moving control file ${regen_dir}/input/${instrument} => ${regen_dir}/processed/${instrument}" | ${TEE} -a ${log_file}
+    if  [[ -f ${regen_dir}/processed/${instrument} ]]; then
+        log WARNING "Moving previous input control file to ${regen_dir}/processed/${instrument}.${DATE}" | ${TEE} -a ${log_file}
+        mv ${regen_dir}/processed/${instrument} ${regen_dir}/processed/${instrument}.${DATE}
+    fi
+    mv ${regen_dir}/input/${instrument} ${regen_dir}/processed/${instrument}
+}
+
+do_ida_for_month() {
+    local instrument=$1
+    local for_month=$2
+    local regen_dir=$3
+    local dbase=$4
+    local out_dir=$5
+    local log_file=$6
+    if [[ -z "$for_month" ]]; then
+        for_month=${DEFAULT_START_DATE}
+    fi
+    log INFO "Selective IDA file for TESS $instrument for ${for_month} under ${out_dir}/${instrument}" | ${TEE} -a ${log_file}
+    ${TESS_IDA} ${instrument} --log-file ${log_file} --for-month ${for_month} -d ${dbase} -o ${out_dir}
+    log INFO "Moving control file ${regen_dir}/input/${instrument} => ${regen_dir}/processed/${instrument}" | ${TEE} -a ${log_file}
+    if  [[ -f ${regen_dir}/processed/${instrument} ]]; then
+        log WARNING "Moving previous input control file to ${regen_dir}/processed/${instrument}.${DATE}" | ${TEE} -a ${log_file}
+        mv ${regen_dir}/processed/${instrument} ${regen_dir}/processed/${instrument}.${DATE}
+    fi
+    mv ${regen_dir}/input/${instrument} ${regen_dir}/processed/${instrument}
+}
+
+
 ida_from_month() {
     local regen_dir=$1/from_month
     local dbase=$2
@@ -159,17 +200,7 @@ ida_from_month() {
     local photometers=$(ls -1 ${regen_dir}/input)
     for instrument in $photometers; do
         from_month=$(cat ${regen_dir}/input/${instrument})
-        if [[ -z "$from_month" ]]; then
-            from_month=${DEFAULT_START_DATE}
-        fi
-        log INFO "Selective IDA file for TESS $instrument from ${from_month} under ${out_dir}/${instrument}" | ${TEE} -a ${log_file}
-        ${TESS_IDA} ${instrument} --log-file ${log_file} --from-month ${from_month} -d ${dbase} -o ${out_dir}
-        log INFO "Moving control file ${regen_dir}/input/${instrument} => ${regen_dir}/processed/${instrument}" | ${TEE} -a ${log_file}
-        if  [[ -f ${regen_dir}/processed/${instrument} ]]; then
-          log WARNING "Moving previous input control file to ${regen_dir}/processed/${instrument}.${DATE}" | ${TEE} -a ${log_file}
-          mv ${regen_dir}/processed/${instrument} ${regen_dir}/processed/${instrument}.${DATE}
-        fi
-        mv ${regen_dir}/input/${instrument} ${regen_dir}/processed/${instrument}
+        do_ida_from_month $instrument $from_month $regen_dir $dbase $ida_dir $log_file
     done
 }
 
@@ -187,17 +218,7 @@ ida_for_month() {
     local photometers=$(ls -1 ${regen_dir}/input)
     for instrument in $photometers; do
         for_month=$(cat ${regen_dir}/input/${instrument})
-        if [[ -z "$for_month" ]]; then
-            for_month=${DEFAULT_START_DATE}
-        fi
-        log INFO "Selective IDA file for TESS $instrument for ${for_month} under ${out_dir}/${instrument}" | ${TEE} -a ${log_file}
-        ${TESS_IDA} ${instrument} --log-file ${log_file} --for-month ${for_month} -d ${dbase} -o ${out_dir}
-        log INFO "Moving control file ${regen_dir}/input/${instrument} => ${regen_dir}/processed/${instrument}" | ${TEE} -a ${log_file}
-        if  [[ -f ${regen_dir}/processed/${instrument} ]]; then
-          log WARNING "Moving previous input control file to ${regen_dir}/processed/${instrument}.${DATE}" | ${TEE} -a ${log_file}
-          mv ${regen_dir}/processed/${instrument} ${regen_dir}/processed/${instrument}.${DATE}
-        fi
-        mv ${regen_dir}/input/${instrument} ${regen_dir}/processed/${instrument}
+        do_ida_for_month $instrument $for_month $regen_dir $dbase $ida_dir $log_file
     done
 }
 
