@@ -70,6 +70,16 @@ log() {
     #echo "${tstamp} [${level}] ${message}"
 }
 
+check_database() {
+    local dbase=$1
+    local log_file=$2
+    if  [[ ! -f ${dbase} || ! -r ${dbase} ]]; then
+        log ERROR "Database file ${dbase} does not exists or is not readable."  2>&1 | ${TEE} -a ${log_file}
+        log ERROR "Exiting" 2>&1 | ${TEE} -a ${log_file}
+        exit 1
+    fi
+}
+
 help() {
     local name=$(basename ${0%.sh})
     echo "Usage:"
@@ -110,39 +120,6 @@ remote_backup() {
     log INFO "getting remote file by rsync" | ${TEE} -a ${log_file}
     log DEBUG "${NICE} -n 19 ${IONICE} -c3 ${RSYNC} -zavh ${src_user}@${src_host}:${src_dir}/tess.db-${date} ${dst_dir}/tess.db" 2>&1 | ${TEE} -a ${log_file}
     ${NICE} -n 19 ${IONICE} -c3 ${RSYNC} -zavh ${src_user}@${src_host}:${src_dir}/tess.db-${date} ${dst_dir}/tess.db 2>&1 | ${TEE} -a ${log_file}
-}
-
-ida_generation() {
-    local month=$1
-    local dbase=$2
-    local ida_dir=$3
-    local log_file=$4
-    if  [[ ! -f ${dbase} || ! -r ${dbase} ]]; then
-        log ERROR "Database file ${dbase} does not exists or is not readable."  2>&1 | ${TEE} -a ${log_file}
-        log ERROR "Exiting" 2>&1 | ${TEE} -a ${log_file}
-        exit 1
-    fi
-    local photometers=$(query_names ${dbase})
-    # Loops over the instruments file and dumping data
-    for instrument in ${photometers}; do
-        if [[ "${month}" = "latest" ]];
-        then
-            log INFO "Generating latest month IDA file for TESS ${instrument} under ${ida_dir}/${instrument}" | ${TEE} -a ${log_file}
-            ${TESS_IDA} ${instrument} --log-file ${log_file} --latest-month -d ${dbase} -o ${ida_dir} 
-        elif [[ "$month" = "previous" ]];
-        then
-            log INFO "Generating previous month IDA file for TESS ${instrument} under ${ida_dir}/${instrument}" | ${TEE} -a ${log_file}
-            ${TESS_IDA} ${instrument} --log-file ${log_file} --previous-month -d ${dbase} -o ${ida_dir}
-        elif [[ "$month" = "beginning" ]];
-        then
-            log INFO "Generating all IDA files from beginning for TESS ${instrument} under ${ida_dir}/${instrument}" | ${TEE} -a ${log_file}
-            ${TESS_IDA} ${instrument} --log-file ${log_file} --from-month 2016-05 -d ${dbase} -o ${ida_dir}
-
-        else
-            log INFO "Generating IDA file for TESS ${instrument} for month ${month} under ${ida_dir}/${instrument}" | ${TEE} -a ${log_file}
-            ${TESS_IDA} ${instrument} --log-file ${log_file} --for-month ${month} -d ${dbase} -o ${ida_dir}
-        fi
-    done
 }
 
 do_ida_from_month() {
@@ -188,11 +165,32 @@ do_ida_for_month() {
 }
 
 
+ida_latest() {
+    local month=$1
+    local dbase=$2
+    local out_dir=$3
+    local log_file=$4
+    check_database $dbase $log_file
+    local photometers=$(query_names ${dbase})
+    # Loops over the instruments file and dumping data
+    for instrument in ${photometers}; do
+        if [[ "${month}" = "latest" ]]; then
+            log INFO "Generating latest month IDA file for TESS ${instrument} under ${out_dir}/${instrument}" | ${TEE} -a ${log_file}
+            ${TESS_IDA} ${instrument} --log-file ${log_file} --latest-month -d ${dbase} -o ${out_dir} 
+        else
+            log INFO "Generating previous month IDA file for TESS ${instrument} under ${out_dir}/${instrument}" | ${TEE} -a ${log_file}
+            ${TESS_IDA} ${instrument} --log-file ${log_file} --previous-month -d ${dbase} -o ${out_dir}
+        fi
+    done
+}
+
+
 ida_from_month() {
     local regen_dir=$1/from_month
     local dbase=$2
     local ida_dir=$3
     local log_file=$4
+    check_database $dbase $log_file
     if  [[ ! -d "${regen_dir}/input" ]]; then
             log INFO "making IDA regeneration files dir structure under ${regen_dir}" | ${TEE} -a ${log_file}
             mkdir -p "${regen_dir}/input"
@@ -218,6 +216,7 @@ ida_for_month() {
     local dbase=$2
     local ida_dir=$3
     local log_file=$4
+    check_database $dbase $log_file
     if  [[ ! -d "${regen_dir}/input" ]]; then
             log INFO "making IDA regeneration files dir structure under ${regen_dir}" | ${TEE} -a ${log_file}
             mkdir -p "${regen_dir}/input"
@@ -319,7 +318,7 @@ log INFO "Start executing pipeline"
 if [[ "${step}" == "all" ]]; then   
     wait_for_backup ${date} ${src_user} ${src_dbase_host} ${src_dbase_dir} ${log_file}
     remote_backup ${date} ${src_user} ${src_dbase_host} ${src_dbase_dir} ${dst_dbase_dir} ${log_file}
-    ida_generation ${month} ${dbase} ${ida_dir} ${log_file}
+    ida_latest ${month} ${dbase} ${ida_dir} ${log_file}
     ida_from_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
     ida_for_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
     sync_nextcloud ${ida_dir} ${web_dir}
@@ -331,13 +330,13 @@ elif [[ "${step}" == "3" ]]; then
     ida_from_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
     ida_for_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
 elif [[ "${step}" == "4" ]]; then
-    ida_generation ${month} ${dbase} ${ida_dir} ${log_file}
+    ida_latest ${month} ${dbase} ${ida_dir} ${log_file}
     ida_from_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
     ida_for_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
 elif [[ "${step}" == "5" ]]; then
     sync_nextcloud ${ida_dir} ${web_dir}
 elif [[ "${step}" == "6" ]]; then
-    ida_generation ${month} ${dbase} ${ida_dir} ${log_file}
+    ida_latest ${month} ${dbase} ${ida_dir} ${log_file}
     ida_from_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
     ida_for_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
     sync_nextcloud ${ida_dir} ${web_dir}
