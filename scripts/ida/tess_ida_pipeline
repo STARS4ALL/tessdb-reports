@@ -162,7 +162,8 @@ do_ida_from_month() {
         log WARNING "Moving previous input control file to ${regen_dir}/processed/${instrument}.${DATE}" | ${TEE} -a ${log_file}
         mv ${regen_dir}/processed/${instrument} ${regen_dir}/processed/${instrument}.${DATE}
     fi
-    mv ${regen_dir}/input/${instrument} ${regen_dir}/processed/${instrument}
+    # test is needed for the "all" + sub-loop instrument case
+    test -f ${regen_dir}/input/${instrument} && mv ${regen_dir}/input/${instrument} ${regen_dir}/processed/${instrument}
 }
 
 do_ida_for_month() {
@@ -182,7 +183,8 @@ do_ida_for_month() {
         log WARNING "Moving previous input control file to ${regen_dir}/processed/${instrument}.${DATE}" | ${TEE} -a ${log_file}
         mv ${regen_dir}/processed/${instrument} ${regen_dir}/processed/${instrument}.${DATE}
     fi
-    mv ${regen_dir}/input/${instrument} ${regen_dir}/processed/${instrument}
+    # test is needed for the "all" + sub-loop instrument case
+    test -f ${regen_dir}/input/${instrument} && mv ${regen_dir}/input/${instrument} ${regen_dir}/processed/${instrument}
 }
 
 
