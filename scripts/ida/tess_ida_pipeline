@@ -89,6 +89,7 @@ help() {
  -l $DEFAULT_LOG_FILE"
 }
 
+
 wait_for_backup() {
     local date=$1
     local src_user=$2
@@ -96,16 +97,21 @@ wait_for_backup() {
     local src_dir=$4
     local log_file=$5
     local yesterday=$(/usr/bin/date +%Y%m%d -d "yesterday")
-    log INFO "Wait for today's backup ${date}"
-    ${SSH} ${src_user}@${src_host} test -f ${src_dir}/tess.db-${yesterday}
-    local exit_code=$?
-    while [ ${exit_code} -eq 0 ];
-    do
-        log INFO "Waiting 60 seconds for tess.db-${yesterday} to be removed" 2>&1 | ${TEE} -a ${log_file}
-        sleep 60
+    log INFO "Wait for today's backup ${date}" 2>&1 | ${TEE} -a ${log_file}
+    for i in {1..60}; do
         ${SSH} ${src_user}@${src_host} test -f ${src_dir}/tess.db-${yesterday}
-        exit_code=$?
+        local exit_code=$?
+        if [ "${exit_code}" -eq 0 ]; then
+            break
+        fi
+        log INFO "[$i/60] Waiting 60 seconds for tess.db-${yesterday} to be removed" 2>&1 | ${TEE} -a ${log_file}
+        sleep 60
     done
+    if [[ "$i" -ge 60 ]]; then
+        log ERROR "No tess.db-${date} was available today" 2>&1 | ${TEE} -a ${log_file}
+        log CRITICAL "Aborting the whole IDA pipe line generation today" 2>&1 | ${TEE} -a ${log_file}
+        exit 1
+    fi
     sleep 5
     log INFO "Database backup tess.db-${date} available" 2>&1 | ${TEE} -a ${log_file}
 }
