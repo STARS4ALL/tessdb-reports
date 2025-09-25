@@ -247,7 +247,7 @@ sync_nextcloud() {
     local ida_dir=$1
     local web_dir=$2
     local log_file=$3
-    log INFO "Syncing to NextCloud server from source dir ${ida_dir}"
+    log INFO "Syncing to NextCloud server from source dir ${ida_dir}" | ${TEE} -a ${log_file}
     log DEBUG "${NICE} -n 19 ${IONICE} -c3 ${RCLONE} ${RCLONE_COMMAND} ${ida_dir} ${DEFAULT_WEBDAV_TAG}:${web_dir} ${DEFAULT_WEBDAV_FLAGS}"  2>&1 | ${TEE} -a ${log_file}
     ${NICE} -n 19 ${IONICE} -c3 ${RCLONE} ${RCLONE_COMMAND} ${ida_dir} ${DEFAULT_WEBDAV_TAG}:${web_dir} ${DEFAULT_WEBDAV_FLAGS}  2>&1 | ${TEE} -a ${log_file}
 }
