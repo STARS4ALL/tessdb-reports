@@ -345,6 +345,7 @@ elif [[ "${step}" == "4" ]]; then
 elif [[ "${step}" == "5" ]]; then
     sync_nextcloud ${ida_dir} ${web_dir}
 elif [[ "${step}" == "6" ]]; then
+    remote_backup ${date} ${src_user} ${src_dbase_host} ${src_dbase_dir} ${dst_dbase_dir} ${log_file}
     ida_latest ${month} ${dbase} ${ida_dir} ${log_file}
     ida_from_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
     ida_for_month ${regen_dir} ${dbase} ${ida_dir} ${log_file}
