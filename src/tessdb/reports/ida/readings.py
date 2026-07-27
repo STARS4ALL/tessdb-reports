@@ -112,6 +112,9 @@ def fetch(name, month, location_id, connection):
     if instrument_model[0] == 'TESS-W':
         log.debug("[%s] photometer is a TESS-W", name)
         return fetch_tessw(name, month, location_id, connection)
+    elif instrument_model[0] == 'TESS-WDL':
+        log.debug("[%s] photometer is a TESS-WDL", name)
+        return fetch_tessw(name, month, location_id, connection)
     elif instrument_model[0] == 'TESS4C':
         log.debug("[%s] photometer is a TESS4C", name)
         return fetch_tess4c(name, month, location_id, connection)
